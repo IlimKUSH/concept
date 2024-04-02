@@ -71,10 +71,10 @@ const Table = () => {
     }, []);
 
 
-    const uniqueDates = [...new Set(data?.data?.map(item => item.date))];
+    const uniqueDates = [...new Set(data?.data?.map(item => item.date))].reverse();
 
-    const startDate = uniqueDates[uniqueDates.length - 1];
-    const endDate = uniqueDates[0];
+    const startDate = uniqueDates[0];
+    const endDate = uniqueDates[uniqueDates.length - 1];
 
     useEffect(() => {
         if (data?.data?.length > 0) {
@@ -155,20 +155,44 @@ const Table = () => {
         };
     }
 
-    const combinedData = data?.data?.map(employeeData => {
-        const matchingItem = factTime?.data?.find(item => {
-            // Конвертируем comingTime в нужный формат и сравниваем с датой из основного массива
-            const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
+    const factTimeByEmployeeAndDate = {};
+    factTime?.data?.forEach(item => {
+        const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
+        const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
 
-            return item.employee.name === employeeData.employee.name && formattedComingTime === employeeData.date;
-        });
+        if (!factTimeByEmployeeAndDate[item.employee.name]) {
+            factTimeByEmployeeAndDate[item.employee.name] = {};
+        }
+        factTimeByEmployeeAndDate[item.employee.name][formattedComingTime] = item;
+        factTimeByEmployeeAndDate[item.employee.name][formattedLeaveTime] = item;
+    });
+
+// Маппинг данных с использованием объектов для быстрого доступа
+    const combinedData = data?.data?.map(employeeData => {
+        const matchingItem = factTimeByEmployeeAndDate[employeeData.employee.name]?.[employeeData.date];
 
         return {
             ...employeeData,
-            newComingTime: matchingItem ? format(new Date(matchingItem.comingTime), "hh:mm") : null,
-            newLeaveTime: matchingItem ? format(new Date(matchingItem.leaveTime), "hh:mm") : null
+            newComingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
+            newLeaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
         };
     });
+
+    // const combinedData = data?.data?.map(employeeData => {
+    //     const matchingItem = factTime?.data?.find(item => {
+    //         // Конвертируем comingTime в нужный формат и сравниваем с датой из основного массива
+    //         const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
+    //         const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
+    //
+    //         return item.employee.name === employeeData.employee.name && (formattedComingTime === employeeData.date || formattedLeaveTime === employeeData.date);
+    //     });
+    //
+    //     return {
+    //         ...employeeData,
+    //         newComingTime: !!matchingItem?.comingTime && format(new Date(matchingItem.comingTime), "HH:mm"),
+    //         newLeaveTime: !!matchingItem?.leaveTime && format(new Date(matchingItem.leaveTime), "HH:mm")
+    //     };
+    // });
 
     const uniqueEmployeeNames = new Set(data?.data?.map(employeeData => employeeData.employee.name)); // Получаем уникальные имена сотрудников
     const uniqueDepartments = [...new Set(data?.data?.map(employeeData => employeeData.department.name))]
@@ -223,11 +247,13 @@ const Table = () => {
                             </div>
                         </td>
                         {/* Выводим имя сотрудника в первом столбце строки */}
-                        {uniqueDates.reverse().map((date, colIndex) => {
+                        {uniqueDates.map((date, colIndex) => {
                             const employee = combinedData?.find(item => item.date === date && item.employee.name === employeeName && item.department.name === departmentName);
 
                             const startTime = new Date(`1970-01-01T${employee.startTime}`)
+
                             const endTime = new Date(`1970-01-01T${employee.endTime}`)
+
                             return (
                                 <Fragment key={colIndex}>
                                     <td colSpan={1}>

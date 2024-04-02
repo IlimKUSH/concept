@@ -17,9 +17,8 @@ body {
 
 .fact {
   display: flex;
-  justify-content: center;
-  align-content: center;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-evenly;
 }
 
 .time {
@@ -27,6 +26,11 @@ body {
   border: none;
   width: 37px;
   padding: 0;
+  cursor: pointer;
+}
+
+.react-datepicker-popper {
+  z-index: 9999 !important;
 }
 
 .table {
@@ -65,11 +69,11 @@ body {
 }
 
 .w300 {
-  width: 300px;
+  width: 180px;
 }
 
 .w150 {
-  width: 150px;
+  width: 90px;
 }
 
 /*input[type="time"] {*/
