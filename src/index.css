@@ -24,6 +24,9 @@ body {
 
 .time {
   font-size: 14px;
+  border: none;
+  width: 37px;
+  padding: 0;
 }
 
 .table {
@@ -40,9 +43,25 @@ body {
   box-shadow: 2px 2px 2px 3px rgba(0,0,0,0.1)
 }
 
+.excel-btn {
+  background-color: #4CAF50;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  margin: 20px 0;
+  cursor: pointer;
+  border-radius: 5px;
+  transition-duration: 0.3s;
+}
+
+.excel-btn:hover {
+  background-color: #45a049;
+}
+
 .sticky {
   position: sticky;
   left: 0;
+  z-index: 1;
 }
 
 .w300 {
@@ -53,20 +72,20 @@ body {
   width: 150px;
 }
 
-input[type="time"] {
-  border: none;
-  position: relative;
-}
+/*input[type="time"] {*/
+/*  border: none;*/
+/*  position: relative;*/
+/*}*/
 
-input[type="time"]::-webkit-calendar-picker-indicator {
-  background: transparent;
-  bottom: 0;
-  color: transparent;
-  cursor: pointer;
-  height: auto;
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: auto
-}
+/*input[type="time"]::-webkit-calendar-picker-indicator {*/
+/*  background: transparent;*/
+/*  bottom: 0;*/
+/*  color: transparent;*/
+/*  cursor: pointer;*/
+/*  height: auto;*/
+/*  left: 0;*/
+/*  position: absolute;*/
+/*  right: 0;*/
+/*  top: 0;*/
+/*  width: auto*/
+/*}*/

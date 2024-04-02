@@ -1,5 +1,9 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx/xlsx.mjs';
+import DatePicker from "react-datepicker";
+import 'react-datepicker/dist/react-datepicker.css';
+import {format} from "date-fns";
+
 
 function calculateTimeDifference(startTime, endTime) {
     const start = new Date(`1970-01-01T${startTime}`);
@@ -10,12 +14,13 @@ function calculateTimeDifference(startTime, endTime) {
 
 const Table = () => {
     const [data, setData] = useState(null);
-    const [idsData, setIdsData] = useState(null);
     const [factTime, setFactTime] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
 
     const fetchIds = useCallback(() => {
+        setIsLoading(true)
         fetch(`/ws/rest/com.axelor.apps.mycrm.db.WorkSchedule/${id}/fetch`, {
             method: 'POST',
             headers: {
@@ -29,7 +34,34 @@ const Table = () => {
         })
             .then((res) => res.json())
             .then((jsonData) => {
-                setIdsData(jsonData.data[0]?.workScheduleLineList?.map(item => item.id))
+                const ids = jsonData.data[0]?.workScheduleLineList?.map(item => item.id);
+                if (ids?.length > 0) {
+                    return fetch("/ws/rest/com.axelor.apps.mycrm.db.WorkScheduleLine/search", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
+                            "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
+                        },
+                        credentials: "include",
+                        body: JSON.stringify({
+                            data: {
+                                criteria: [
+                                    {
+                                        fieldName: "id",
+                                        operator: "in",
+                                        value: ids
+                                    }
+                                ]
+                            }
+                        })
+                    });
+                }
+            })
+            .then((res) => res.json())
+            .then((jsonData) => {
+                setIsLoading(false)
+                setData(jsonData)
             })
             .catch((error) => console.error(error))
     }, []);
@@ -38,35 +70,6 @@ const Table = () => {
         fetchIds();
     }, []);
 
-    useEffect(() => {
-        if (idsData?.length > 0) {
-            fetch("/ws/rest/com.axelor.apps.mycrm.db.WorkScheduleLine/search", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
-                    "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    data: {
-                        criteria: [
-                            {
-                                fieldName: "id",
-                                operator: "in",
-                                value: idsData
-                            }
-                        ]
-                    }
-                })
-            })
-                .then((res) => res.json())
-                .then((response) => {
-                    setData(response)
-                })
-                .catch((error) => console.error(error))
-        }
-    }, [idsData])
 
     const uniqueDates = [...new Set(data?.data?.map(item => item.date))];
 
@@ -116,7 +119,7 @@ const Table = () => {
         }
     }, [data]);
 
-    const handleTimeChange = (startTime, endTime, id, version) => {
+    const handleTimeChange = debounce((startTime, endTime, id, version) => {
         fetch(`/ws/rest/com.axelor.apps.mycrm.db.WorkScheduleLine/${id}`, {
             method: 'POST',
             headers: {
@@ -138,7 +141,19 @@ const Table = () => {
                 fetchIds()
             })
             .catch((error) => console.error(error))
-    };
+    }, 1000)
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
 
     const combinedData = data?.data?.map(employeeData => {
         const matchingItem = factTime?.data?.find(item => {
@@ -150,8 +165,8 @@ const Table = () => {
 
         return {
             ...employeeData,
-            newComingTime: matchingItem ? matchingItem.comingTime?.substring(11,16) : null,
-            newLeaveTime: matchingItem ? matchingItem.leaveTime?.substring(11,16) : null
+            newComingTime: matchingItem ? format(new Date(matchingItem.comingTime), "hh:mm") : null,
+            newLeaveTime: matchingItem ? format(new Date(matchingItem.leaveTime), "hh:mm") : null
         };
     });
 
@@ -211,23 +226,47 @@ const Table = () => {
                         {uniqueDates.reverse().map((date, colIndex) => {
                             const employee = combinedData?.find(item => item.date === date && item.employee.name === employeeName && item.department.name === departmentName);
 
+                            const startTime = new Date(`1970-01-01T${employee.startTime}`)
+                            const endTime = new Date(`1970-01-01T${employee.endTime}`)
                             return (
                                 <Fragment key={colIndex}>
                                     <td colSpan={1}>
                                         {employee &&
                                             <div className="plan">
                                                 <div hidden>{employee.startTime.slice(0, -3)}</div>
-                                                <input type="time" value={employee.startTime} className="time"
-                                                       onChange={(e) => handleTimeChange(e.target.value, employee.endTime, employee.id, employee.version)}/>
+                                                {isLoading ? <div>Загрузка</div> :
+                                                    <DatePicker
+                                                        selected={startTime}
+                                                        showTimeSelect
+                                                        showTimeSelectOnly
+                                                        timeCaption="Time"
+                                                        timeIntervals={10}
+                                                        dateFormat="HH:mm"
+                                                        timeFormat="HH:mm"
+                                                        className="time"
+                                                        onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}
+                                                    />
+                                                }
                                                 <div>-</div>
                                                 <div hidden>{employee.endTime.slice(0, -3)}</div>
-                                                <input type="time" value={employee.endTime} className="time"
-                                                       onChange={(e) => handleTimeChange(employee.startTime, e.target.value, employee.id, employee.version)}/>
+                                                {isLoading ? <div>Загрузка</div> :
+                                                    <DatePicker
+                                                        selected={endTime}
+                                                        showTimeSelect
+                                                        showTimeSelectOnly
+                                                        timeCaption="Time"
+                                                        timeIntervals={10}
+                                                        dateFormat="HH:mm"
+                                                        timeFormat="HH:mm"
+                                                        className="time"
+                                                        onChange={(time) => handleTimeChange(employee.startTime, time, employee.id, employee.version)}
+                                                    />
+                                                }
                                             </div>
                                         }
                                     </td>
                                     <td colSpan={1}>
-                                        {employee &&
+                                    {employee &&
                                             <div className="fact">
                                                 {employee.newComingTime && <span className="time">{employee.newComingTime}</span>}
                                                 <div>-</div>
@@ -308,7 +347,7 @@ const Table = () => {
                 {tableRows}
                 </tbody>
             </table>
-            <button onClick={exportToExcel}>Export to Excel</button>
+            <button className="excel-btn" onClick={exportToExcel}>Export to Excel</button>
         </div>
     );
 };
