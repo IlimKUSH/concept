@@ -120,6 +120,8 @@ const Table = () => {
     }, [data]);
 
     const handleTimeChange = debounce((startTime, endTime, id, version) => {
+        setIsLoading(true)
+
         fetch(`/ws/rest/com.axelor.apps.mycrm.db.WorkScheduleLine/${id}`, {
             method: 'POST',
             headers: {
@@ -138,10 +140,11 @@ const Table = () => {
             })
         })
             .then(() => {
+                setIsLoading(false)
                 fetchIds()
             })
             .catch((error) => console.error(error))
-    }, 1000)
+    }, 500)
 
     function debounce(func, wait) {
         let timeout;
@@ -208,7 +211,7 @@ const Table = () => {
             </tr>
         );
 
-        uniqueEmployeeNames.forEach((employeeName, val) => {
+        uniqueEmployeeNames.forEach((employeeName, _) => {
             const totalPlanTimes = {};
             const totalFactTimes = {};
 
@@ -260,8 +263,9 @@ const Table = () => {
                                         {employee &&
                                             <div className="head-tab-time">
                                                 <div hidden>{employee.startTime.slice(0, -3)}</div>
-                                                {isLoading ? <div>Загрузка</div> :
+                                                {/*{isLoading ? <div>Загрузка</div> :*/}
                                                     <DatePicker
+                                                        disabled={isLoading}
                                                         selected={startTime}
                                                         showTimeSelect
                                                         showTimeSelectOnly
@@ -272,11 +276,12 @@ const Table = () => {
                                                         className="time pointer"
                                                         onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}
                                                     />
-                                                }
+                                                {/*}*/}
                                                 <div>-</div>
                                                 <div hidden>{employee.endTime.slice(0, -3)}</div>
-                                                {isLoading ? <div>Загрузка</div> :
+                                                {/*{isLoading ? <div>Загрузка</div> :*/}
                                                     <DatePicker
+                                                        disabled={isLoading}
                                                         selected={endTime}
                                                         showTimeSelect
                                                         showTimeSelectOnly
@@ -287,7 +292,7 @@ const Table = () => {
                                                         className="time pointer"
                                                         onChange={(time) => handleTimeChange(employee.startTime, time, employee.id, employee.version)}
                                                     />
-                                                }
+                                                {/*}*/}
                                             </div>
                                         }
                                     </td>
