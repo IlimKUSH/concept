@@ -173,8 +173,8 @@ const Table = () => {
 
         return {
             ...employeeData,
-            newComingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
-            newLeaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
+            comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
+            leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
         };
     });
 
@@ -208,7 +208,7 @@ const Table = () => {
             </tr>
         );
 
-        uniqueEmployeeNames.forEach((employeeName, i) => {
+        uniqueEmployeeNames.forEach((employeeName, val) => {
             const totalPlanTimes = {};
             const totalFactTimes = {};
 
@@ -223,8 +223,8 @@ const Table = () => {
             });
 
             combinedData?.forEach((item) => {
-                const { employee, newComingTime, newLeaveTime } = item;
-                const timeDifference = calculateTimeDifference(newComingTime, newLeaveTime); // Функция для вычисления разницы фактического времени
+                const { employee, comingTime, leaveTime } = item;
+                const timeDifference = calculateTimeDifference(comingTime, leaveTime); // Функция для вычисления разницы фактического времени
                 if (!totalFactTimes[employee.name]) {
                     totalFactTimes[employee.name] = timeDifference;
                 } else {
@@ -240,8 +240,8 @@ const Table = () => {
 
             if (employeeData) {
                 tableRows.push(
-                    <tr key={i}>
-                        <td bgcolor="#fff" className="sticky">
+                    <tr key={employeeName} className="row">
+                        <td className="sticky">
                             <div className="employee">
                                 {employeeData.employee.name}
                             </div>
@@ -258,7 +258,7 @@ const Table = () => {
                                 <Fragment key={colIndex}>
                                     <td colSpan={1}>
                                         {employee &&
-                                            <div className="plan">
+                                            <div className="head-tab-time">
                                                 <div hidden>{employee.startTime.slice(0, -3)}</div>
                                                 {isLoading ? <div>Загрузка</div> :
                                                     <DatePicker
@@ -269,7 +269,7 @@ const Table = () => {
                                                         timeIntervals={10}
                                                         dateFormat="HH:mm"
                                                         timeFormat="HH:mm"
-                                                        className="time"
+                                                        className="time pointer"
                                                         onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}
                                                     />
                                                 }
@@ -284,7 +284,7 @@ const Table = () => {
                                                         timeIntervals={10}
                                                         dateFormat="HH:mm"
                                                         timeFormat="HH:mm"
-                                                        className="time"
+                                                        className="time pointer"
                                                         onChange={(time) => handleTimeChange(employee.startTime, time, employee.id, employee.version)}
                                                     />
                                                 }
@@ -293,10 +293,10 @@ const Table = () => {
                                     </td>
                                     <td colSpan={1}>
                                     {employee &&
-                                            <div className="fact">
-                                                {employee.newComingTime && <span className="time">{employee.newComingTime}</span>}
+                                            <div className="head-tab-time">
+                                                {employee.comingTime && <span className="time">{employee.comingTime}</span>}
                                                 <div>-</div>
-                                                {employee.newLeaveTime && <span className="time">{employee.newLeaveTime}</span>}
+                                                {employee.leaveTime && <span className="time">{employee.leaveTime}</span>}
                                             </div>
                                         }
                                     </td>
@@ -324,7 +324,7 @@ const Table = () => {
 
         XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
 
-        XLSX.writeFile(wb, `test.xlsx`);
+        XLSX.writeFile(wb, `work-schedule.xlsx`);
     };
 
     return (
@@ -335,7 +335,7 @@ const Table = () => {
                     <th></th>
                     {uniqueDates?.map((date, index) => (
                         <th key={index} colSpan={2}>
-                            <div className="w300">
+                            <div className="head-date">
                                 {date}
                             </div>
                         </th>
@@ -351,10 +351,10 @@ const Table = () => {
                     {uniqueDates?.map((date) => (
                         <Fragment key={date}>
                             <th colSpan={1}>
-                                <div className="w150">план</div>
+                                <div className="head-tab">план</div>
                             </th>
                             <th colSpan={1}>
-                                <div className="w150">факт</div>
+                                <div className="head-tab">факт</div>
                             </th>
                         </Fragment>
                     ))}

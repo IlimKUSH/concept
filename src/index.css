@@ -9,13 +9,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.plan {
-  display: flex;
-  align-items: center;
-  justify-content: space-evenly;
+td {
+  padding: 0;
 }
 
-.fact {
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
+
+.head-tab-time {
   display: flex;
   align-items: center;
   justify-content: space-evenly;
@@ -26,11 +28,15 @@ body {
   border: none;
   width: 37px;
   padding: 0;
+  background: transparent;
+}
+
+.pointer {
   cursor: pointer;
 }
 
-.react-datepicker-popper {
-  z-index: 9999 !important;
+.row:nth-child(even) {
+  background-color: rgba(211, 211, 211, 0.3);
 }
 
 .table {
@@ -43,14 +49,17 @@ body {
 }
 
 .employee {
+  font-weight: 500;
   width: 180px;
-  box-shadow: 2px 2px 2px 3px rgba(0,0,0,0.1)
+  background: #fff;
+  padding: 2px;
+  box-shadow: 2px 2px 10px 0 rgba(0, 0, 0, 0.3)
 }
 
 .excel-btn {
   background-color: #4CAF50;
   border: none;
-  color: white;
+  color: #fff;
   padding: 10px 20px;
   margin: 20px 0;
   cursor: pointer;
@@ -68,11 +77,11 @@ body {
   z-index: 1;
 }
 
-.w300 {
+.head-date {
   width: 180px;
 }
 
-.w150 {
+.head-tab {
   width: 90px;
 }
 
