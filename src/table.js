@@ -76,8 +76,8 @@ const Table = () => {
     const actualYear = uniqueDates[0]?.split('-')[0]
     const actualMonth = uniqueDates[0]?.split('-')[1]
 
-    const startDate2 = startOfMonth(new Date(actualYear, actualMonth - 1)); // начало января 2024 года
-    const endDate2 = endOfMonth(new Date(actualYear, actualMonth - 1)); // конец января 2024 года
+    const startDate2 = startOfMonth(new Date(actualYear, actualMonth - 1)); // начало месяца актуального года
+    const endDate2 = endOfMonth(new Date(actualYear, actualMonth - 1)); // конец месяца актуального года
 
 // Получаем массив всех дней месяца
     const allDaysOfMonth = eachDayOfInterval({ start: startDate2, end: endDate2 });
@@ -85,8 +85,6 @@ const Table = () => {
 // Преобразуем даты в формат, который соответствует формату в вашем массиве uniqueDates
     const formattedAllDaysOfMonth = allDaysOfMonth.map(date => format(date, 'yyyy-MM-dd'));
 
-// Объединяем массивы uniqueDates и formattedAllDaysOfMonth, затем создаем уникальный массив с помощью Set и преобразуем обратно в массив
-//     const allUniqueDates = [...new Set([...uniqueDates, ...formattedAllDaysOfMonth])];
     const allUniqueDates = [...new Set([...formattedAllDaysOfMonth])];
 
     const startDate = allUniqueDates[0];
@@ -180,69 +178,69 @@ const Table = () => {
         };
     }
 
-//     const factTimeByEmployeeAndDate = {};
-//     factTime?.data?.forEach(item => {
-//         const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
-//         const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
-//
-//         if (!factTimeByEmployeeAndDate[item.employee.name]) {
-//             factTimeByEmployeeAndDate[item.employee.name] = {};
-//         }
-//         factTimeByEmployeeAndDate[item.employee.name][formattedComingTime] = item;
-//         factTimeByEmployeeAndDate[item.employee.name][formattedLeaveTime] = item;
-//     });
-//
-// // Маппинг данных с использованием объектов для быстрого доступа
-//     const combinedData = data?.data?.map(employeeData => {
-//         const matchingItem = factTimeByEmployeeAndDate[employeeData.employee.name]?.[employeeData.date];
-//
-//         return {
-//             ...employeeData,
-//             comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
-//             leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
-//         };
-//     });
+    const factTimeByEmployeeAndDate = {};
+    factTime?.data?.forEach(item => {
+        const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
+        const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
 
-    const combinedData = [];
+        if (!factTimeByEmployeeAndDate[item.employee.name]) {
+            factTimeByEmployeeAndDate[item.employee.name] = {};
+        }
+        factTimeByEmployeeAndDate[item.employee.name][formattedComingTime] = item;
+        factTimeByEmployeeAndDate[item.employee.name][formattedLeaveTime] = item;
+    });
+
+// Маппинг данных с использованием объектов для быстрого доступа
+    const combinedData = data?.data?.map(employeeData => {
+        const matchingItem = factTimeByEmployeeAndDate[employeeData.employee.name]?.[employeeData.date];
+
+        return {
+            ...employeeData,
+            comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
+            leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
+        };
+    });
+
+    // const combinedData = [];
 
 // Проходим по всем элементам в factTime
-    factTime?.data?.forEach(item => {
-        // Создаем объект с данными для текущей записи в factTime
-        const newDataItem = {
-            ...item,
-            date: new Date(item.comingTime).toISOString().split('T')[0],
-            department: {
-                name: item?.["employee.contactPartner.companyDepartment"].name
-            }
-            // newComingTime: item.comingTime && format(new Date(item.comingTime), "HH:mm"), // Преобразуем comingTime
-            // newLeaveTime: item.leaveTime && format(new Date(item.leaveTime), "HH:mm") // Преобразуем leaveTime
-        };
-
-        // Добавляем текущую запись в combinedData
-        combinedData.push(newDataItem);
-    });
-
-// Теперь добавляем все записи из data?.data, которые не были найдены в factTime
-    data?.data?.forEach(employeeData => {
-        const matchingItem = factTime?.data?.find(item => {
-            // Конвертируем comingTime в нужный формат и сравниваем с датой из основного массива
-            const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
-            const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
-
-            return item.employee.name === employeeData.employee.name && (formattedComingTime === employeeData.date || formattedLeaveTime === employeeData.date);
-        });
-        // Проверяем, есть ли уже такая запись в combinedData
-        const existingItemIndex = combinedData.findIndex(item => item.employeeData?.employee.name === employeeData.employee?.name && item.employeeData.date === employeeData.date);
-
-        // Если запись не найдена в combinedData, добавляем ее
-        if (existingItemIndex === -1) {
-            combinedData.push({
-                ...employeeData,
-                comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
-                leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
-            });
-        }
-    });
+//     factTime?.data?.forEach(item => {
+//         // Создаем объект с данными для текущей записи в factTime
+//         const newDataItem = {
+//             ...item,
+//             date: new Date(item.comingTime).toISOString().split('T')[0],
+//             department: {
+//                 name: item?.["employee.contactPartner.companyDepartment"].name
+//             }
+//             // newComingTime: item.comingTime && format(new Date(item.comingTime), "HH:mm"), // Преобразуем comingTime
+//             // newLeaveTime: item.leaveTime && format(new Date(item.leaveTime), "HH:mm") // Преобразуем leaveTime
+//         };
+//
+//         // Добавляем текущую запись в combinedData
+//         combinedData.push(newDataItem);
+//     });
+//
+// // Теперь добавляем все записи из data?.data, которые не были найдены в factTime
+//     data?.data?.forEach(employeeData => {
+//         const matchingItem = factTime?.data?.find(item => {
+//             // Конвертируем comingTime в нужный формат и сравниваем с датой из основного массива
+//             const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
+//             const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
+//
+//             return item.employee.name === employeeData.employee.name && (formattedComingTime === employeeData.date || formattedLeaveTime === employeeData.date);
+//         });
+//         // Проверяем, есть ли уже такая запись в combinedData
+//         const existingItemIndex = combinedData.findIndex(item => item.employeeData?.employee.name === employeeData.employee?.name && item.employeeData.date === employeeData.date);
+//
+//         // Если запись не найдена в combinedData, добавляем ее
+//         if (existingItemIndex === -1) {
+//             combinedData.push({
+//                 ...employeeData,
+//                 comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
+//                 leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
+//             });
+//         }
+//     });
 
     // const combinedData = data?.data?.map(employeeData => {
     //     const matchingItem = factTime?.data?.find(item => {
@@ -320,44 +318,10 @@ const Table = () => {
 
                             const startTime = employee?.startTime ? new Date(`1970-01-01T${employee?.startTime}`) : null
                             const endTime = employee?.endTime ? new Date(`1970-01-01T${employee?.endTime}`) : null
-                            // const factComingTime = !!employee?.comingTime ? format(new Date(employee?.comingTime), "HH:mm") : null
-                            // const factLeaveTime = !!employee?.leaveTime ? format(new Date(employee?.leaveTime), "HH:mm") : null
 
                             return (
                                 <Fragment key={colIndex}>
                                     <td colSpan={1}>
-                                        {/*{employee && !isWeekendDay &&*/}
-                                        {/*    <div className="head-tab-time">*/}
-                                        {/*        <div hidden>{employee.startTime?.slice(0, -3)}</div>*/}
-                                        {/*        <DatePicker*/}
-                                        {/*            disabled={isLoading}*/}
-                                        {/*            selected={startTime}*/}
-                                        {/*            showTimeSelect*/}
-                                        {/*            showTimeSelectOnly*/}
-                                        {/*            timeCaption="Time"*/}
-                                        {/*            timeIntervals={10}*/}
-                                        {/*            dateFormat="HH:mm"*/}
-                                        {/*            timeFormat="HH:mm"*/}
-                                        {/*            className="time pointer"*/}
-                                        {/*            onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}*/}
-                                        {/*        />*/}
-                                        {/*        <div>-</div>*/}
-                                        {/*        <div hidden>{employee.endTime?.slice(0, -3)}</div>*/}
-                                        {/*        <DatePicker*/}
-                                        {/*            disabled={isLoading}*/}
-                                        {/*            selected={endTime}*/}
-                                        {/*            showTimeSelect*/}
-                                        {/*            showTimeSelectOnly*/}
-                                        {/*            timeCaption="Time"*/}
-                                        {/*            timeIntervals={10}*/}
-                                        {/*            dateFormat="HH:mm"*/}
-                                        {/*            timeFormat="HH:mm"*/}
-                                        {/*            className="time pointer"*/}
-                                        {/*            onChange={(time) => handleTimeChange(employee?.startTime, time, employee.id, employee.version)}*/}
-                                        {/*        />*/}
-                                        {/*    </div>*/}
-                                        {/*}*/}
-
                                         {employee &&
                                             <div className="head-tab-time">
                                                 <div hidden>{employee?.startTime?.slice(0, -3)}</div>
@@ -391,22 +355,11 @@ const Table = () => {
                                         }
                                     </td>
                                     <td colSpan={1}>
-                                    {/*{employee && !isWeekendDay &&*/}
-                                    {/*        <div className="head-tab-time">*/}
-                                    {/*            {employee.comingTime && !isWeekendDay && <span className="time">{employee.comingTime}</span>}*/}
-                                    {/*            <div>-</div>*/}
-                                    {/*            {employee.leaveTime && !isWeekendDay && <span className="time">{employee.leaveTime}</span>}*/}
-                                    {/*        </div>*/}
-                                    {/*}*/}
                                     {employee &&
                                             <div className="head-tab-time">
                                                 {employee?.comingTime && <span className="time">{employee?.comingTime}</span>}
-                                                {/*<span className="time">{factComingTime}</span>*/}
-                                                {/*{employee?.comingTime && <span className="time">{format(new Date(employee?.comingTime), "HH:mm")}</span>}*/}
                                                 <div>-</div>
                                                 {employee?.leaveTime && <span className="time">{employee?.leaveTime}</span>}
-                                                {/*<span className="time">{factLeaveTime}</span>*/}
-                                                {/*{employee?.leaveTime && <span className="time">{format(new Date(employee?.leaveTime), "HH:mm")}</span>}*/}
                                             </div>
                                     }
                                     </td>
@@ -437,50 +390,20 @@ const Table = () => {
         XLSX.writeFile(wb, `work-schedule.xlsx`);
     };
 
-//     function getAllDatesInMonth(year, month) {
-//         const daysInMonth = new Date(year, month + 1, 0).getDate();
-//         const allDates = [];
-//         for (let day = 1; day <= daysInMonth; day++) {
-//             allDates.push(new Date(year, month, day));
-//         }
-//         return allDates;
-//     }
-//
-// // Создаем массив всех дат в указанном месяце и году
-//     const year = 2024; // Замените на актуальный год
-//     const month = 0; // Замените на актуальный месяц (0 для января, 1 для февраля и т.д.)
-//     const allDatesInRange = getAllDatesInMonth(year, month);
-
-    // const uniqueDatesWithWeekends = uniqueDates.map((date, index) => {
-    //     const isWeekendDay = isWeekend(new Date(date));
-    //     return { date, isWeekendDay };
-    // });
-
-    // console.log(allDatesInRange)
-
     return (
         <div>
             <table border={1} className="table">
                 <thead>
                 <tr>
                     <th></th>
-                    {/*{uniqueDatesWithWeekends?.map((date, index) => (*/}
-                    {/*    <th key={index} colSpan={2}>*/}
-                    {/*        <div className="head-date">*/}
-                    {/*            {date.date}*/}
-                    {/*        </div>*/}
-                    {/*    </th>*/}
-                    {/*))}*/}
-                    {allUniqueDates.map((date, index) => {
-                        // console.log(format(date, "yyyy-MM-dd"))
-                        return (
+                    {allUniqueDates.map((date, index) => (
                             <th key={index} colSpan={2}>
                                 <div className="head-date">
                                     {date}
                                 </div>
                             </th>
-                        );
-                    })}
+                        )
+                    )}
                     <th colSpan={3}>
                         <div>
                             Всего
