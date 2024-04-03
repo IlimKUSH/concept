@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx/xlsx.mjs';
 import DatePicker from "react-datepicker";
 import 'react-datepicker/dist/react-datepicker.css';
-import {format} from "date-fns";
+import { eachDayOfInterval, startOfMonth, endOfMonth, format } from 'date-fns';
 
 
 function calculateTimeDifference(startTime, endTime) {
@@ -73,8 +73,22 @@ const Table = () => {
 
     const uniqueDates = [...new Set(data?.data?.map(item => item.date))].reverse();
 
-    const startDate = uniqueDates[0];
-    const endDate = uniqueDates[uniqueDates.length - 1];
+    console.log(uniqueDates[0])
+
+    const startDate2 = startOfMonth(new Date(2024, 0)); // начало января 2024 года
+    const endDate2 = endOfMonth(new Date(2024, 0)); // конец января 2024 года
+
+// Получаем массив всех дней месяца
+    const allDaysOfMonth = eachDayOfInterval({ start: startDate2, end: endDate2 });
+
+// Преобразуем даты в формат, который соответствует формату в вашем массиве uniqueDates
+    const formattedAllDaysOfMonth = allDaysOfMonth.map(date => format(date, 'yyyy-MM-dd'));
+
+// Объединяем массивы uniqueDates и formattedAllDaysOfMonth, затем создаем уникальный массив с помощью Set и преобразуем обратно в массив
+    const allUniqueDates = [...new Set([ ...formattedAllDaysOfMonth, ...uniqueDates])];
+
+    const startDate = allUniqueDates[0];
+    const endDate = allUniqueDates[allUniqueDates.length - 1];
 
     useEffect(() => {
         if (data?.data?.length > 0) {
@@ -200,6 +214,11 @@ const Table = () => {
     const uniqueEmployeeNames = new Set(data?.data?.map(employeeData => employeeData.employee.name)); // Получаем уникальные имена сотрудников
     const uniqueDepartments = [...new Set(data?.data?.map(employeeData => employeeData.department.name))]
 
+    function isWeekend(date) {
+        const dayOfWeek = date.getDay(); // Получаем день недели (0 - воскресенье, 1 - понедельник, ..., 6 - суббота)
+        return dayOfWeek === 0 || dayOfWeek === 6; // Возвращаем true, если день является воскресеньем (0) или субботой (6)
+    }
+
     const tableRows = [];
 
     uniqueDepartments.forEach((departmentName, deptIndex) => {
@@ -250,60 +269,94 @@ const Table = () => {
                             </div>
                         </td>
                         {/* Выводим имя сотрудника в первом столбце строки */}
-                        {uniqueDates.map((date, colIndex) => {
+                        {allUniqueDates.map((date, colIndex) => {
                             const employee = combinedData?.find(item => item.date === date && item.employee.name === employeeName && item.department.name === departmentName);
 
-                            const startTime = new Date(`1970-01-01T${employee.startTime}`)
-
-                            const endTime = new Date(`1970-01-01T${employee.endTime}`)
+                            const isWeekendDay = isWeekend(new Date(date))
+                            const startTime = new Date(`1970-01-01T${employee?.startTime}`)
+                            const endTime = new Date(`1970-01-01T${employee?.endTime}`)
 
                             return (
                                 <Fragment key={colIndex}>
                                     <td colSpan={1}>
+                                        {/*{employee && !isWeekendDay &&*/}
+                                        {/*    <div className="head-tab-time">*/}
+                                        {/*        <div hidden>{employee.startTime?.slice(0, -3)}</div>*/}
+                                        {/*        <DatePicker*/}
+                                        {/*            disabled={isLoading}*/}
+                                        {/*            selected={startTime}*/}
+                                        {/*            showTimeSelect*/}
+                                        {/*            showTimeSelectOnly*/}
+                                        {/*            timeCaption="Time"*/}
+                                        {/*            timeIntervals={10}*/}
+                                        {/*            dateFormat="HH:mm"*/}
+                                        {/*            timeFormat="HH:mm"*/}
+                                        {/*            className="time pointer"*/}
+                                        {/*            onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}*/}
+                                        {/*        />*/}
+                                        {/*        <div>-</div>*/}
+                                        {/*        <div hidden>{employee.endTime?.slice(0, -3)}</div>*/}
+                                        {/*        <DatePicker*/}
+                                        {/*            disabled={isLoading}*/}
+                                        {/*            selected={endTime}*/}
+                                        {/*            showTimeSelect*/}
+                                        {/*            showTimeSelectOnly*/}
+                                        {/*            timeCaption="Time"*/}
+                                        {/*            timeIntervals={10}*/}
+                                        {/*            dateFormat="HH:mm"*/}
+                                        {/*            timeFormat="HH:mm"*/}
+                                        {/*            className="time pointer"*/}
+                                        {/*            onChange={(time) => handleTimeChange(employee?.startTime, time, employee.id, employee.version)}*/}
+                                        {/*        />*/}
+                                        {/*    </div>*/}
+                                        {/*}*/}
                                         {employee &&
                                             <div className="head-tab-time">
-                                                <div hidden>{employee.startTime.slice(0, -3)}</div>
-                                                {/*{isLoading ? <div>Загрузка</div> :*/}
-                                                    <DatePicker
-                                                        disabled={isLoading}
-                                                        selected={startTime}
-                                                        showTimeSelect
-                                                        showTimeSelectOnly
-                                                        timeCaption="Time"
-                                                        timeIntervals={10}
-                                                        dateFormat="HH:mm"
-                                                        timeFormat="HH:mm"
-                                                        className="time pointer"
-                                                        onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}
-                                                    />
-                                                {/*}*/}
+                                                <div hidden>{employee.startTime?.slice(0, -3)}</div>
+                                                <DatePicker
+                                                    disabled={isLoading}
+                                                    selected={startTime}
+                                                    showTimeSelect
+                                                    showTimeSelectOnly
+                                                    timeCaption="Time"
+                                                    timeIntervals={10}
+                                                    dateFormat="HH:mm"
+                                                    timeFormat="HH:mm"
+                                                    className="time pointer"
+                                                    onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}
+                                                />
                                                 <div>-</div>
-                                                <div hidden>{employee.endTime.slice(0, -3)}</div>
-                                                {/*{isLoading ? <div>Загрузка</div> :*/}
-                                                    <DatePicker
-                                                        disabled={isLoading}
-                                                        selected={endTime}
-                                                        showTimeSelect
-                                                        showTimeSelectOnly
-                                                        timeCaption="Time"
-                                                        timeIntervals={10}
-                                                        dateFormat="HH:mm"
-                                                        timeFormat="HH:mm"
-                                                        className="time pointer"
-                                                        onChange={(time) => handleTimeChange(employee.startTime, time, employee.id, employee.version)}
-                                                    />
-                                                {/*}*/}
+                                                <div hidden>{employee.endTime?.slice(0, -3)}</div>
+                                                <DatePicker
+                                                    disabled={isLoading}
+                                                    selected={endTime}
+                                                    showTimeSelect
+                                                    showTimeSelectOnly
+                                                    timeCaption="Time"
+                                                    timeIntervals={10}
+                                                    dateFormat="HH:mm"
+                                                    timeFormat="HH:mm"
+                                                    className="time pointer"
+                                                    onChange={(time) => handleTimeChange(employee?.startTime, time, employee.id, employee.version)}
+                                                />
                                             </div>
                                         }
                                     </td>
                                     <td colSpan={1}>
+                                    {/*{employee && !isWeekendDay &&*/}
+                                    {/*        <div className="head-tab-time">*/}
+                                    {/*            {employee.comingTime && !isWeekendDay && <span className="time">{employee.comingTime}</span>}*/}
+                                    {/*            <div>-</div>*/}
+                                    {/*            {employee.leaveTime && !isWeekendDay && <span className="time">{employee.leaveTime}</span>}*/}
+                                    {/*        </div>*/}
+                                    {/*}*/}
                                     {employee &&
                                             <div className="head-tab-time">
-                                                {employee.comingTime && <span className="time">{employee.comingTime}</span>}
+                                                {employee.comingTime && !isWeekendDay && <span className="time">{employee.comingTime}</span>}
                                                 <div>-</div>
-                                                {employee.leaveTime && <span className="time">{employee.leaveTime}</span>}
+                                                {employee.leaveTime && !isWeekendDay && <span className="time">{employee.leaveTime}</span>}
                                             </div>
-                                        }
+                                    }
                                     </td>
                                 </Fragment>
                             );
@@ -332,19 +385,50 @@ const Table = () => {
         XLSX.writeFile(wb, `work-schedule.xlsx`);
     };
 
+//     function getAllDatesInMonth(year, month) {
+//         const daysInMonth = new Date(year, month + 1, 0).getDate();
+//         const allDates = [];
+//         for (let day = 1; day <= daysInMonth; day++) {
+//             allDates.push(new Date(year, month, day));
+//         }
+//         return allDates;
+//     }
+//
+// // Создаем массив всех дат в указанном месяце и году
+//     const year = 2024; // Замените на актуальный год
+//     const month = 0; // Замените на актуальный месяц (0 для января, 1 для февраля и т.д.)
+//     const allDatesInRange = getAllDatesInMonth(year, month);
+
+    // const uniqueDatesWithWeekends = uniqueDates.map((date, index) => {
+    //     const isWeekendDay = isWeekend(new Date(date));
+    //     return { date, isWeekendDay };
+    // });
+
+    // console.log(allDatesInRange)
+
     return (
         <div>
             <table border={1} className="table">
                 <thead>
                 <tr>
                     <th></th>
-                    {uniqueDates?.map((date, index) => (
-                        <th key={index} colSpan={2}>
-                            <div className="head-date">
-                                {date}
-                            </div>
-                        </th>
-                    ))}
+                    {/*{uniqueDatesWithWeekends?.map((date, index) => (*/}
+                    {/*    <th key={index} colSpan={2}>*/}
+                    {/*        <div className="head-date">*/}
+                    {/*            {date.date}*/}
+                    {/*        </div>*/}
+                    {/*    </th>*/}
+                    {/*))}*/}
+                    {allUniqueDates.map((date, index) => {
+                        console.log(format(date, "yyyy-MM-dd"))
+                        return (
+                            <th key={index} colSpan={2}>
+                                <div className="head-date">
+                                    {date}
+                                </div>
+                            </th>
+                        );
+                    })}
                     <th colSpan={3}>
                         <div>
                             Всего
@@ -353,7 +437,7 @@ const Table = () => {
                 </tr>
                 <tr>
                     <th></th>
-                    {uniqueDates?.map((date) => (
+                    {allUniqueDates?.map((date) => (
                         <Fragment key={date}>
                             <th colSpan={1}>
                                 <div className="head-tab">план</div>
