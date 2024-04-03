@@ -178,69 +178,71 @@ const Table = () => {
         };
     }
 
-    const factTimeByEmployeeAndDate = {};
-    factTime?.data?.forEach(item => {
-        const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
-        const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
+//     const factTimeByEmployeeAndDate = {};
+//     factTime?.data?.forEach(item => {
+//         const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
+//         const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
+//
+//         if (!factTimeByEmployeeAndDate[item.employee.name]) {
+//             factTimeByEmployeeAndDate[item.employee.name] = {};
+//         }
+//         factTimeByEmployeeAndDate[item.employee.name][formattedComingTime] = item;
+//         factTimeByEmployeeAndDate[item.employee.name][formattedLeaveTime] = item;
+//     });
+//
+// // Маппинг данных с использованием объектов для быстрого доступа
+//     const combinedData = data?.data?.map(employeeData => {
+//         const matchingItem = factTimeByEmployeeAndDate[employeeData.employee.name]?.[employeeData.date];
+//
+//         return {
+//             ...employeeData,
+//             comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
+//             leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
+//         };
+//     });
 
-        if (!factTimeByEmployeeAndDate[item.employee.name]) {
-            factTimeByEmployeeAndDate[item.employee.name] = {};
-        }
-        factTimeByEmployeeAndDate[item.employee.name][formattedComingTime] = item;
-        factTimeByEmployeeAndDate[item.employee.name][formattedLeaveTime] = item;
-    });
+    const combinedData = [];
 
-// Маппинг данных с использованием объектов для быстрого доступа
-    const combinedData = data?.data?.map(employeeData => {
-        const matchingItem = factTimeByEmployeeAndDate[employeeData.employee.name]?.[employeeData.date];
+    data?.data?.forEach(employeeData => {
+        const matchingItem = factTime?.data?.find(item => {
+            // Конвертируем comingTime в нужный формат и сравниваем с датой из основного массива
+            const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
+            const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
 
-        return {
+            return item.employee.name === employeeData.employee.name && (formattedComingTime === employeeData.date || formattedLeaveTime === employeeData.date);
+        });
+        // Проверяем, есть ли уже такая запись в combinedData
+        // const existingItemIndex = combinedData.findIndex(item => item.employeeData?.employee.name === employeeData.employee?.name && item.employeeData.date === employeeData.date);
+
+        // Если запись не найдена в combinedData, добавляем ее
+        // if (existingItemIndex === -1) {
+        combinedData.push({
             ...employeeData,
-            comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
-            leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
-        };
+            comingTime: !!matchingItem?.comingTime ? matchingItem.comingTime : null,
+            leaveTime: !!matchingItem?.leaveTime ? matchingItem.leaveTime : null
+        });
+        // }
     });
-
-    // const combinedData = [];
 
 // Проходим по всем элементам в factTime
-//     factTime?.data?.forEach(item => {
-//         // Создаем объект с данными для текущей записи в factTime
-//         const newDataItem = {
-//             ...item,
-//             date: new Date(item.comingTime).toISOString().split('T')[0],
-//             department: {
-//                 name: item?.["employee.contactPartner.companyDepartment"].name
-//             }
-//             // newComingTime: item.comingTime && format(new Date(item.comingTime), "HH:mm"), // Преобразуем comingTime
-//             // newLeaveTime: item.leaveTime && format(new Date(item.leaveTime), "HH:mm") // Преобразуем leaveTime
-//         };
-//
-//         // Добавляем текущую запись в combinedData
-//         combinedData.push(newDataItem);
-//     });
-//
-// // Теперь добавляем все записи из data?.data, которые не были найдены в factTime
-//     data?.data?.forEach(employeeData => {
-//         const matchingItem = factTime?.data?.find(item => {
-//             // Конвертируем comingTime в нужный формат и сравниваем с датой из основного массива
-//             const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
-//             const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
-//
-//             return item.employee.name === employeeData.employee.name && (formattedComingTime === employeeData.date || formattedLeaveTime === employeeData.date);
-//         });
-//         // Проверяем, есть ли уже такая запись в combinedData
-//         const existingItemIndex = combinedData.findIndex(item => item.employeeData?.employee.name === employeeData.employee?.name && item.employeeData.date === employeeData.date);
-//
-//         // Если запись не найдена в combinedData, добавляем ее
-//         if (existingItemIndex === -1) {
-//             combinedData.push({
-//                 ...employeeData,
-//                 comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
-//                 leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
-//             });
-//         }
-//     });
+    factTime?.data?.forEach(item => {
+        // Создаем объект с данными для текущей записи в factTime
+        const newDataItem = {
+            ...item,
+            date: new Date(item.comingTime).toISOString().split('T')[0],
+            department: {
+                name: item?.["employee.contactPartner.companyDepartment"].name
+            }
+            // newComingTime: item.comingTime && format(new Date(item.comingTime), "HH:mm"), // Преобразуем comingTime
+            // newLeaveTime: item.leaveTime && format(new Date(item.leaveTime), "HH:mm") // Преобразуем leaveTime
+        };
+
+        // Добавляем текущую запись в combinedData
+        combinedData.push(newDataItem);
+    });
+
+// Теперь добавляем все записи из data?.data, которые не были найдены в factTime
+
 
     // const combinedData = data?.data?.map(employeeData => {
     //     const matchingItem = factTime?.data?.find(item => {
@@ -251,12 +253,11 @@ const Table = () => {
     //         return item.employee.name === employeeData.employee.name && (formattedComingTime === employeeData.date || formattedLeaveTime === employeeData.date);
     //     });
     //
-    //     console.log(!employeeData)
     //
     //     return {
     //         ...employeeData,
-    //         newComingTime: !!matchingItem?.comingTime && format(new Date(matchingItem.comingTime), "HH:mm"),
-    //         newLeaveTime: !!matchingItem?.leaveTime && format(new Date(matchingItem.leaveTime), "HH:mm")
+    //         comingTime: !!matchingItem?.comingTime && format(new Date(matchingItem.comingTime), "HH:mm"),
+    //         leaveTime: !!matchingItem?.leaveTime && format(new Date(matchingItem.leaveTime), "HH:mm")
     //     };
     // });
 
@@ -356,11 +357,11 @@ const Table = () => {
                                     </td>
                                     <td colSpan={1}>
                                     {employee &&
-                                            <div className="head-tab-time">
-                                                {employee?.comingTime && <span className="time">{employee?.comingTime}</span>}
-                                                <div>-</div>
-                                                {employee?.leaveTime && <span className="time">{employee?.leaveTime}</span>}
-                                            </div>
+                                        <div className="head-tab-time">
+                                            {employee?.comingTime && <span className="time">{format(new Date(employee?.comingTime), "HH:mm")}</span>}
+                                            <div>-</div>
+                                            {employee?.leaveTime && <span className="time">{format(new Date(employee?.leaveTime), "HH:mm")}</span>}
+                                        </div>
                                     }
                                     </td>
                                 </Fragment>
