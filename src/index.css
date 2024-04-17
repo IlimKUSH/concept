@@ -23,6 +23,10 @@ td {
   justify-content: space-evenly;
 }
 
+.custom-select {
+  width: 20px; /* Селект будет занимать только ширину содержимого */
+}
+
 .time {
   font-size: 14px;
   border: none;
@@ -77,12 +81,12 @@ td {
   z-index: 1;
 }
 
-.head-date {
-  width: 180px;
-}
+/*.head-date {*/
+/*  width: 180px;*/
+/*}*/
 
 .head-tab {
-  width: 90px;
+  width: 130px;
 }
 
 /*input[type="time"] {*/

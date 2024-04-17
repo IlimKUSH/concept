@@ -1,9 +1,22 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
-import * as XLSX from 'xlsx/xlsx.mjs';
+// import * as XLSX from 'xlsx/xlsx.mjs';
 import DatePicker from "react-datepicker";
 import 'react-datepicker/dist/react-datepicker.css';
 import { eachDayOfInterval, startOfMonth, endOfMonth, format } from 'date-fns';
+import Datepicker from "./components/datepicker";
 
+
+export function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 
 function calculateTimeDifference(startTime, endTime) {
     const start = new Date(`1970-01-01T${startTime}`);
@@ -13,11 +26,68 @@ function calculateTimeDifference(startTime, endTime) {
 }
 
 const Table = () => {
+    const [userData, setUserData] = useState(null);
     const [data, setData] = useState(null);
     const [factTime, setFactTime] = useState(null);
+    const [workTime, setWorkTime] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [theme, setTheme] = useState(null);
+
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
+
+    const getWorkTime = useCallback(() => {
+        fetch("/ws/rest/com.axelor.apps.directories.db.WorkingTime/search", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
+                "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                sortBy: ["startTime"]
+            })
+        })
+            .then((res) => res.json())
+            .then((jsonData) => {
+                setWorkTime(jsonData)
+            })
+    }, [])
+
+    const fetchUserData = useCallback(() => {
+        fetch("https://concept.sanarip.org/concept/ws/app/info", {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
+                "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
+            },
+            credentials: "include",
+        })
+            .then((res) => res.json())
+            .then((jsonData) => {
+                const id = jsonData?.["user.id"]
+                const theme = jsonData?.["application.theme"]
+                setTheme(theme)
+                if (id) {
+                    fetch(`https://concept.sanarip.org/concept/ws/rest/com.axelor.auth.db.User/${id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
+                            "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
+                        },
+                        credentials: "include",
+                    })
+                        .then((res) => res.json())
+                        .then((jsonData) => {
+                            const editable = jsonData.data[0]?.roles?.some(role => role.name === 'Hr')
+                            setUserData({...jsonData.data[0], editable})
+                        })
+                }
+            })
+    }, [])
 
     const fetchIds = useCallback(() => {
         setIsLoading(true)
@@ -67,6 +137,8 @@ const Table = () => {
     }, []);
 
     useEffect(() => {
+        getWorkTime();
+        fetchUserData();
         fetchIds();
     }, []);
 
@@ -165,18 +237,6 @@ const Table = () => {
             })
             .catch((error) => console.error(error))
     }, 500)
-
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
 
     const factTimeByEmployeeAndDate = {};
     factTime?.data?.forEach(item => {
@@ -319,40 +379,49 @@ const Table = () => {
                             const startTime = employee?.startTime ? new Date(`1970-01-01T${employee?.startTime}`) : null
                             const endTime = employee?.endTime ? new Date(`1970-01-01T${employee?.endTime}`) : null
 
+
+
                             return (
                                 <Fragment key={colIndex}>
                                     <td colSpan={1}>
-                                        {employee &&
-                                            <div className="head-tab-time">
-                                                <div hidden>{employee?.startTime?.slice(0, -3)}</div>
-                                                {startTime && <DatePicker
-                                                    disabled={isLoading}
-                                                    selected={startTime}
-                                                    showTimeSelect
-                                                    showTimeSelectOnly
-                                                    timeCaption="Time"
-                                                    timeIntervals={10}
-                                                    dateFormat="HH:mm"
-                                                    timeFormat="HH:mm"
-                                                    className="time pointer"
-                                                    onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}
-                                                />}
-                                                <div>-</div>
-                                                <div hidden>{employee?.endTime?.slice(0, -3)}</div>
-                                                {endTime && <DatePicker
-                                                    disabled={isLoading}
-                                                    selected={endTime}
-                                                    showTimeSelect
-                                                    showTimeSelectOnly
-                                                    timeCaption="Time"
-                                                    timeIntervals={10}
-                                                    dateFormat="HH:mm"
-                                                    timeFormat="HH:mm"
-                                                    className="time pointer"
-                                                    onChange={(time) => handleTimeChange(employee?.startTime, time, employee.id, employee.version)}
-                                                />}
-                                            </div>
-                                        }
+                                        <Datepicker employee={employee} startTime={startTime} endTime={endTime}
+                                                    userData={userData} workTime={workTime}
+                                                    handleTimeChange={handleTimeChange} />
+                                        {/*{employee &&*/}
+                                        {/*    <div className="head-tab-time">*/}
+                                        {/*        <div hidden>{employee?.startTime?.slice(0, -3)}</div>*/}
+                                        {/*        {startTime && <DatePicker*/}
+                                        {/*            disabled={isLoading || userData?.editable}*/}
+                                        {/*            selected={startTime}*/}
+                                        {/*            showTimeSelect*/}
+                                        {/*            showTimeSelectOnly*/}
+                                        {/*            timeCaption="Время"*/}
+                                        {/*            timeIntervals={10}*/}
+                                        {/*            dateFormat="HH:mm"*/}
+                                        {/*            timeFormat="HH:mm"*/}
+                                        {/*            className="time pointer"*/}
+                                        {/*            onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}*/}
+                                        {/*        />}*/}
+                                        {/*        {startTime && endTime ? <div>-</div> : <div>Выходной</div>}*/}
+                                        {/*        <div hidden>{employee?.endTime?.slice(0, -3)}</div>*/}
+                                        {/*        {endTime && <DatePicker*/}
+                                        {/*            disabled={isLoading || userData?.editable}*/}
+                                        {/*            selected={endTime}*/}
+                                        {/*            showTimeSelect*/}
+                                        {/*            showTimeSelectOnly*/}
+                                        {/*            timeCaption="Время"*/}
+                                        {/*            timeIntervals={10}*/}
+                                        {/*            dateFormat="HH:mm"*/}
+                                        {/*            timeFormat="HH:mm"*/}
+                                        {/*            className="time pointer"*/}
+                                        {/*            onChange={(time) => handleTimeChange(employee?.startTime, time, employee.id, employee.version)}*/}
+                                        {/*        />}*/}
+                                        {/*        <select className="custom-select" value={selectedOption} onChange={handleChange}>*/}
+                                        {/*            <option value="workday">Рабочий день</option>*/}
+                                        {/*            <option value="weekend">Выходной</option>*/}
+                                        {/*        </select>*/}
+                                        {/*    </div>*/}
+                                        {/*}*/}
                                     </td>
                                     <td colSpan={1}>
                                     {employee &&
@@ -381,14 +450,14 @@ const Table = () => {
         });
     });
 
-    const exportToExcel = () => {
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.table_to_sheet(document.querySelector('.table'));
-
-        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-
-        XLSX.writeFile(wb, `work-schedule.xlsx`);
-    };
+    // const exportToExcel = () => {
+    //     const wb = XLSX.utils.book_new();
+    //     const ws = XLSX.utils.table_to_sheet(document.querySelector('.table'));
+    //
+    //     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    //
+    //     XLSX.writeFile(wb, `work-schedule.xlsx`);
+    // };
 
     return (
         <div>
@@ -437,7 +506,6 @@ const Table = () => {
                 {tableRows}
                 </tbody>
             </table>
-            <button className="excel-btn" onClick={exportToExcel}>Export to Excel</button>
         </div>
     );
 };
