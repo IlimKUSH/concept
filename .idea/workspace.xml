@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0c999d13-aebd-4ce6-aed8-c28669154ca3" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/components/datepicker.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Changes.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Changes.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Changes2.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Changes2.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/datepicker.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/datepicker.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/index.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/table.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/table.js" afterDir="false" />
@@ -61,7 +59,8 @@
       <workItem from="1711948354587" duration="548000" />
       <workItem from="1713343223039" duration="519000" />
       <workItem from="1713343788599" duration="7380000" />
-      <workItem from="1713352177979" duration="6627000" />
+      <workItem from="1713352177979" duration="6706000" />
+      <workItem from="1713418574851" duration="12958000" />
     </task>
     <servers />
   </component>

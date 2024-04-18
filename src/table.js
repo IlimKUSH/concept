@@ -1,10 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
-// import * as XLSX from 'xlsx/xlsx.mjs';
-import DatePicker from "react-datepicker";
-import 'react-datepicker/dist/react-datepicker.css';
 import { eachDayOfInterval, startOfMonth, endOfMonth, format } from 'date-fns';
-import Datepicker from "./components/datepicker";
-
+import TimepickerTd from "./components/datepicker";
+import 'react-datepicker/dist/react-datepicker.css';
 
 export function debounce(func, wait) {
     let timeout;
@@ -31,12 +28,12 @@ const Table = () => {
     const [factTime, setFactTime] = useState(null);
     const [workTime, setWorkTime] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [theme, setTheme] = useState(null);
+    const [theme, setTheme] = useState("light");
 
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
 
-    const getWorkTime = useCallback(() => {
+    const fetchWorkTime = useCallback(() => {
         fetch("/ws/rest/com.axelor.apps.directories.db.WorkingTime/search", {
             method: 'POST',
             headers: {
@@ -56,7 +53,7 @@ const Table = () => {
     }, [])
 
     const fetchUserData = useCallback(() => {
-        fetch("https://concept.sanarip.org/concept/ws/app/info", {
+        fetch("/ws/app/info", {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -130,17 +127,27 @@ const Table = () => {
             })
             .then((res) => res.json())
             .then((jsonData) => {
-                setIsLoading(false)
                 setData(jsonData)
             })
+            .finally(() =>
+                setIsLoading(false)
+            )
             .catch((error) => console.error(error))
     }, []);
 
     useEffect(() => {
-        getWorkTime();
+        fetchWorkTime();
         fetchUserData();
         fetchIds();
     }, []);
+
+    useEffect(() => {
+        if (theme === "dark") {
+            document.body.classList.add('dark-mode');
+        } else {
+            document.body.classList.remove('dark-mode');
+        }
+    }, [theme]);
 
 
     const uniqueDates = [...new Set(data?.data?.map(item => item.date))].reverse();
@@ -211,33 +218,6 @@ const Table = () => {
         }
     }, [data]);
 
-    const handleTimeChange = debounce((startTime, endTime, id, version) => {
-        setIsLoading(true)
-
-        fetch(`/ws/rest/com.axelor.apps.mycrm.db.WorkScheduleLine/${id}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
-                "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                data: {
-                    id,
-                    version,
-                    startTime,
-                    endTime
-                }
-            })
-        })
-            .then(() => {
-                setIsLoading(false)
-                fetchIds()
-            })
-            .catch((error) => console.error(error))
-    }, 500)
-
     const factTimeByEmployeeAndDate = {};
     factTime?.data?.forEach(item => {
         const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
@@ -261,65 +241,6 @@ const Table = () => {
         };
     });
 
-    // const combinedData = [];
-
-// Проходим по всем элементам в factTime
-//     factTime?.data?.forEach(item => {
-//         // Создаем объект с данными для текущей записи в factTime
-//         const newDataItem = {
-//             ...item,
-//             date: new Date(item.comingTime).toISOString().split('T')[0],
-//             department: {
-//                 name: item?.["employee.contactPartner.companyDepartment"].name
-//             }
-//             // newComingTime: item.comingTime && format(new Date(item.comingTime), "HH:mm"), // Преобразуем comingTime
-//             // newLeaveTime: item.leaveTime && format(new Date(item.leaveTime), "HH:mm") // Преобразуем leaveTime
-//         };
-//
-//         // Добавляем текущую запись в combinedData
-//         combinedData.push(newDataItem);
-//     });
-//
-// // Теперь добавляем все записи из data?.data, которые не были найдены в factTime
-//     data?.data?.forEach(employeeData => {
-//         const matchingItem = factTime?.data?.find(item => {
-//             // Конвертируем comingTime в нужный формат и сравниваем с датой из основного массива
-//             const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
-//             const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
-//
-//             return item.employee.name === employeeData.employee.name && (formattedComingTime === employeeData.date || formattedLeaveTime === employeeData.date);
-//         });
-//         // Проверяем, есть ли уже такая запись в combinedData
-//         const existingItemIndex = combinedData.findIndex(item => item.employeeData?.employee.name === employeeData.employee?.name && item.employeeData.date === employeeData.date);
-//
-//         // Если запись не найдена в combinedData, добавляем ее
-//         if (existingItemIndex === -1) {
-//             combinedData.push({
-//                 ...employeeData,
-//                 comingTime: !!matchingItem?.comingTime ? format(new Date(matchingItem.comingTime), "HH:mm") : null,
-//                 leaveTime: !!matchingItem?.leaveTime ? format(new Date(matchingItem.leaveTime), "HH:mm") : null
-//             });
-//         }
-//     });
-
-    // const combinedData = data?.data?.map(employeeData => {
-    //     const matchingItem = factTime?.data?.find(item => {
-    //         // Конвертируем comingTime в нужный формат и сравниваем с датой из основного массива
-    //         const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
-    //         const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
-    //
-    //         return item.employee.name === employeeData.employee.name && (formattedComingTime === employeeData.date || formattedLeaveTime === employeeData.date);
-    //     });
-    //
-    //     console.log(!employeeData)
-    //
-    //     return {
-    //         ...employeeData,
-    //         newComingTime: !!matchingItem?.comingTime && format(new Date(matchingItem.comingTime), "HH:mm"),
-    //         newLeaveTime: !!matchingItem?.leaveTime && format(new Date(matchingItem.leaveTime), "HH:mm")
-    //     };
-    // });
-
     const uniqueEmployeeNames = new Set(data?.data?.map(employeeData => employeeData.employee.name)); // Получаем уникальные имена сотрудников
     const uniqueDepartments = [...new Set(data?.data?.map(employeeData => employeeData.department.name))]
 
@@ -328,7 +249,7 @@ const Table = () => {
     uniqueDepartments.forEach((departmentName, deptIndex) => {
         tableRows.push(
             <tr key={deptIndex}>
-                <td bgcolor="#8CB5F9" className="sticky">
+                <td className="sticky department-bg">
                     <strong>{departmentName}</strong>
                 </td>
             </tr>
@@ -367,7 +288,7 @@ const Table = () => {
             if (employeeData) {
                 tableRows.push(
                     <tr key={employeeName} className="row">
-                        <td className="sticky">
+                        <td className="sticky employee-bg">
                             <div className="employee">
                                 {employeeData.employee.name}
                             </div>
@@ -376,53 +297,10 @@ const Table = () => {
                         {allUniqueDates.map((date, colIndex) => {
                             const employee = combinedData?.find(item => item.date === date && item.employee?.name === employeeName && item.department?.name === departmentName);
 
-                            const startTime = employee?.startTime ? new Date(`1970-01-01T${employee?.startTime}`) : null
-                            const endTime = employee?.endTime ? new Date(`1970-01-01T${employee?.endTime}`) : null
-
-
-
                             return (
                                 <Fragment key={colIndex}>
-                                    <td colSpan={1}>
-                                        <Datepicker employee={employee} startTime={startTime} endTime={endTime}
-                                                    userData={userData} workTime={workTime}
-                                                    handleTimeChange={handleTimeChange} />
-                                        {/*{employee &&*/}
-                                        {/*    <div className="head-tab-time">*/}
-                                        {/*        <div hidden>{employee?.startTime?.slice(0, -3)}</div>*/}
-                                        {/*        {startTime && <DatePicker*/}
-                                        {/*            disabled={isLoading || userData?.editable}*/}
-                                        {/*            selected={startTime}*/}
-                                        {/*            showTimeSelect*/}
-                                        {/*            showTimeSelectOnly*/}
-                                        {/*            timeCaption="Время"*/}
-                                        {/*            timeIntervals={10}*/}
-                                        {/*            dateFormat="HH:mm"*/}
-                                        {/*            timeFormat="HH:mm"*/}
-                                        {/*            className="time pointer"*/}
-                                        {/*            onChange={(time) => handleTimeChange(time, employee.endTime, employee.id, employee.version)}*/}
-                                        {/*        />}*/}
-                                        {/*        {startTime && endTime ? <div>-</div> : <div>Выходной</div>}*/}
-                                        {/*        <div hidden>{employee?.endTime?.slice(0, -3)}</div>*/}
-                                        {/*        {endTime && <DatePicker*/}
-                                        {/*            disabled={isLoading || userData?.editable}*/}
-                                        {/*            selected={endTime}*/}
-                                        {/*            showTimeSelect*/}
-                                        {/*            showTimeSelectOnly*/}
-                                        {/*            timeCaption="Время"*/}
-                                        {/*            timeIntervals={10}*/}
-                                        {/*            dateFormat="HH:mm"*/}
-                                        {/*            timeFormat="HH:mm"*/}
-                                        {/*            className="time pointer"*/}
-                                        {/*            onChange={(time) => handleTimeChange(employee?.startTime, time, employee.id, employee.version)}*/}
-                                        {/*        />}*/}
-                                        {/*        <select className="custom-select" value={selectedOption} onChange={handleChange}>*/}
-                                        {/*            <option value="workday">Рабочий день</option>*/}
-                                        {/*            <option value="weekend">Выходной</option>*/}
-                                        {/*        </select>*/}
-                                        {/*    </div>*/}
-                                        {/*}*/}
-                                    </td>
+                                    <TimepickerTd employee={employee} userData={userData} workTime={workTime}
+                                                fetchIds={() => fetchIds()} />
                                     <td colSpan={1}>
                                     {employee &&
                                             <div className="head-tab-time">
@@ -450,63 +328,58 @@ const Table = () => {
         });
     });
 
-    // const exportToExcel = () => {
-    //     const wb = XLSX.utils.book_new();
-    //     const ws = XLSX.utils.table_to_sheet(document.querySelector('.table'));
-    //
-    //     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
-    //
-    //     XLSX.writeFile(wb, `work-schedule.xlsx`);
-    // };
+    if (isLoading) {
+        return <div className="loader-parent">
+            <div className="loader"></div>
+        </div>
+    }
 
     return (
-        <div>
-            <table border={1} className="table">
-                <thead>
-                <tr>
-                    <th></th>
-                    {allUniqueDates.map((date, index) => (
-                            <th key={index} colSpan={2}>
-                                <div className="head-date">
-                                    {date}
-                                </div>
-                            </th>
-                        )
-                    )}
-                    <th colSpan={3}>
-                        <div>
-                            Всего
-                        </div>
-                    </th>
-                </tr>
-                <tr>
-                    <th></th>
-                    {allUniqueDates?.map((date) => (
-                        <Fragment key={date}>
-                            <th colSpan={1}>
-                                <div className="head-tab">план</div>
-                            </th>
-                            <th colSpan={1}>
-                                <div className="head-tab">факт</div>
-                            </th>
-                        </Fragment>
-                    ))}
-                    <th colSpan={1} width={150}>
-                        <div>план, час</div>
-                    </th>
-                    <th colSpan={1} width={150}>
-                        <div>факт, час</div>
-                    </th>
-                    <th colSpan={1} width={150}>
-                        <div>% выполнения</div>
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                {tableRows}
-                </tbody>
-            </table>
-        </div>
+        <table border={1} className="table">
+            <thead>
+            <tr>
+                <th></th>
+                {allUniqueDates.map((date, index) => (
+                        <th key={index} colSpan={2}>
+                            <div className="head-date">
+                                {date}
+                            </div>
+                        </th>
+                    )
+                )}
+                <th colSpan={3}>
+                    <div>
+                        Всего
+                    </div>
+                </th>
+            </tr>
+            <tr>
+                <th></th>
+                {allUniqueDates?.map((date) => (
+                    <Fragment key={date}>
+                        <th colSpan={1}>
+                            <div className="head-tab">план</div>
+                        </th>
+                        <th colSpan={1}>
+                            <div className="head-tab">факт</div>
+                        </th>
+                    </Fragment>
+                ))}
+                <th colSpan={1} width={150}>
+                    <div>план, час</div>
+                </th>
+                <th colSpan={1} width={150}>
+                    <div>факт, час</div>
+                </th>
+                <th colSpan={1} width={150}>
+                    <div>% выполнения</div>
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            {tableRows}
+            </tbody>
+        </table>
     );
 };
 
