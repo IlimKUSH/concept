@@ -14,7 +14,7 @@
   --department-bg-light: #8CB5F9;
   --department-bg-dark: #36517b;
 
-  --employee-bg-light: #efefef;
+  --employee-bg-light: #FFF;
   --employee-bg-dark: #212235;
 }
 
@@ -36,36 +36,33 @@ body {
   background: var(--background-dark);
 }
 
-.react-datepicker-popper {
-  z-index: 9999 !important;
-}
-
 .head-tab-time {
   display: flex;
   align-items: center;
   justify-content: space-evenly;
 }
 
-.custom-select {
+.custom-input {
   display: none;
-  width: 20px;
-  height: 20px;
-}
-
-.qwe:hover {
-  .custom-select {
-    display: flex;
-  }
-}
-
-select {
-  width: 100%;
-  height: 100%;
+  width: 19px;
+  height: 19px;
   background-color: var(--background-light);
   border: 1px solid var(--border-light);
   border-radius: 0.25rem;
   color: #000;
   cursor: pointer;
+}
+
+.weekend-btn:hover .custom-input {
+  display: block;
+}
+
+.weekend {
+  color: #3ECF8E;
+}
+
+.dark-mode .weekend {
+  color: #72E128;
 }
 
 .dark-mode select {
@@ -152,6 +149,8 @@ select {
 @keyframes l3 {to{transform: rotate(1turn)}}
 
 
+/* TABLE */
+
 .table{
   border-collapse: collapse;
   border: 1px solid var(--border-light);
@@ -183,14 +182,6 @@ select {
 .dark-mode .table td{
   border: 1px solid var(--border-dark);
 }
-
-/*.table tbody tr:nth-child(odd){*/
-/*  background: #FBFBFF;*/
-/*}*/
-
-/*.dark-mode .table tbody tr:nth-child(odd){*/
-/*  background: #FBFBFF;*/
-/*}*/
 
 .table tbody tr:nth-child(even){
   background: #F7F7F7;
@@ -226,5 +217,9 @@ select {
 
 .dark-mode .employee-bg {
   background: var(--employee-bg-dark);
+}
+
+.react-datepicker-popper {
+  z-index: 9999 !important;
 }
 

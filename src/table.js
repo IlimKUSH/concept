@@ -1,25 +1,18 @@
-import { Fragment, useCallback, useEffect, useState } from 'react';
-import { eachDayOfInterval, startOfMonth, endOfMonth, format } from 'date-fns';
-import TimepickerTd from "./components/datepicker";
+import {Fragment, useCallback, useEffect, useState} from 'react';
+import {differenceInHours, eachDayOfInterval, endOfMonth, format, startOfMonth} from 'date-fns';
 import 'react-datepicker/dist/react-datepicker.css';
+import Timepicker from "./components/timepicker";
 
-export function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-function calculateTimeDifference(startTime, endTime) {
+const calculateTimeDifference = (endTime, startTime) => {
     const start = new Date(`1970-01-01T${startTime}`);
     const end = new Date(`1970-01-01T${endTime}`);
-    const difference = end.getTime() - start.getTime();
-    return difference / (1000 * 60 * 60); // Разница в часах
+    let diff = differenceInHours(end, start);
+
+    if (diff < 0) {
+        diff *= -1
+    }
+
+    return diff
 }
 
 const Table = () => {
@@ -28,7 +21,7 @@ const Table = () => {
     const [factTime, setFactTime] = useState(null);
     const [workTime, setWorkTime] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [theme, setTheme] = useState("light");
+    const [theme, setTheme] = useState("dark");
 
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
@@ -79,7 +72,7 @@ const Table = () => {
                     })
                         .then((res) => res.json())
                         .then((jsonData) => {
-                            const editable = jsonData.data[0]?.roles?.some(role => role.name === 'Hr')
+                            const editable = jsonData.data[0]?.roles?.some(role => role.name === 'Admin' || role.name === 'HR Manager')
                             setUserData({...jsonData.data[0], editable})
                         })
                 }
@@ -94,7 +87,7 @@ const Table = () => {
                 'Content-Type': 'application/json',
                 "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
                 // Cookie: "JSESSIONID=8785FB25769E7B6D4B75038F13CF5C4E; CSRF-TOKEN=534b6a570e92423a940d6086318a0ac1",
-                "Authorization":"Basic Y29uY2VwdDpjb25jZXB0MTIz"
+                "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
             },
             credentials: "include",
             body: JSON.stringify({})
@@ -129,17 +122,35 @@ const Table = () => {
             .then((jsonData) => {
                 setData(jsonData)
             })
-            .finally(() =>
+            .finally(() => {
                 setIsLoading(false)
-            )
+            })
             .catch((error) => console.error(error))
-    }, []);
+    }, [id]);
+
+    // Функция для обновления позиции горизонтального скролла и сохранения ее в локальное хранилище
+    const updateScrollPosition = () => {
+        const currentPosition = window.scrollX;
+        localStorage.setItem('horizontalScrollPosition', currentPosition.toString());
+    };
+
+    // Обработчик события прокрутки, вызывающий функцию обновления позиции скролла
+    useEffect(() => {
+        if (!isLoading) {
+            const savedPosition = localStorage.getItem('horizontalScrollPosition');
+            window.scroll(parseInt(savedPosition), 0);
+            window.addEventListener('scroll', updateScrollPosition);
+            return () => {
+                window.removeEventListener('scroll', updateScrollPosition);
+            };
+        }
+    }, [isLoading]);
 
     useEffect(() => {
         fetchWorkTime();
         fetchUserData();
         fetchIds();
-    }, []);
+    }, [fetchIds, fetchUserData, fetchWorkTime]);
 
     useEffect(() => {
         if (theme === "dark") {
@@ -149,7 +160,6 @@ const Table = () => {
         }
     }, [theme]);
 
-
     const uniqueDates = [...new Set(data?.data?.map(item => item.date))].reverse();
 
     const actualYear = uniqueDates[0]?.split('-')[0]
@@ -158,10 +168,10 @@ const Table = () => {
     const startDate2 = startOfMonth(new Date(actualYear, actualMonth - 1)); // начало месяца актуального года
     const endDate2 = endOfMonth(new Date(actualYear, actualMonth - 1)); // конец месяца актуального года
 
-// Получаем массив всех дней месяца
-    const allDaysOfMonth = eachDayOfInterval({ start: startDate2, end: endDate2 });
+    // Получаем массив всех дней месяца
+    const allDaysOfMonth = eachDayOfInterval({start: startDate2, end: endDate2});
 
-// Преобразуем даты в формат, который соответствует формату в вашем массиве uniqueDates
+    // Преобразуем даты в формат, который соответствует формату в вашем массиве uniqueDates
     const formattedAllDaysOfMonth = allDaysOfMonth.map(date => format(date, 'yyyy-MM-dd'));
 
     const allUniqueDates = [...new Set([...formattedAllDaysOfMonth])];
@@ -184,7 +194,8 @@ const Table = () => {
                         "employee.contactPartner.companyDepartment",
                         "employee",
                         "comingTime",
-                        "leaveTime"
+                        "leaveTime",
+                        "date"
                     ],
                     data: {
                         criteria: [
@@ -207,7 +218,7 @@ const Table = () => {
                             }
                         ]
                     },
-                    sortBy: ["leaveTime","comingTime"]
+                    sortBy: ["leaveTime", "comingTime"]
                 })
             })
                 .then((res) => res.json())
@@ -216,18 +227,14 @@ const Table = () => {
                 })
                 .catch((error) => console.error(error))
         }
-    }, [data]);
+    }, [data, endDate, startDate]);
 
     const factTimeByEmployeeAndDate = {};
     factTime?.data?.forEach(item => {
-        const formattedComingTime = new Date(item.comingTime).toISOString().split('T')[0];
-        const formattedLeaveTime = new Date(item.leaveTime).toISOString().split('T')[0];
-
         if (!factTimeByEmployeeAndDate[item.employee.name]) {
             factTimeByEmployeeAndDate[item.employee.name] = {};
         }
-        factTimeByEmployeeAndDate[item.employee.name][formattedComingTime] = item;
-        factTimeByEmployeeAndDate[item.employee.name][formattedLeaveTime] = item;
+        factTimeByEmployeeAndDate[item.employee.name][item.date] = item;
     });
 
 // Маппинг данных с использованием объектов для быстрого доступа
@@ -260,22 +267,30 @@ const Table = () => {
             const totalFactTimes = {};
 
             combinedData?.forEach((item) => {
-                const { employee, startTime, endTime } = item;
-                const timeDifference = calculateTimeDifference(startTime, endTime); // Функция для вычисления разницы планового времени
-                if (!totalPlanTimes[employee?.name]) {
-                    totalPlanTimes[employee?.name] = timeDifference;
-                } else {
-                    totalPlanTimes[employee?.name] += timeDifference;
+                const {employee, startTime, endTime} = item;
+
+                if (!!startTime && !!endTime) {
+                    const timeDifference = calculateTimeDifference(endTime, startTime) // Функция для вычисления разницы планового времени
+
+                    if (!totalPlanTimes[employee?.name]) {
+                        totalPlanTimes[employee?.name] = timeDifference;
+                    } else {
+                        totalPlanTimes[employee?.name] += timeDifference;
+                    }
                 }
             });
 
             combinedData?.forEach((item) => {
-                const { employee, comingTime, leaveTime } = item;
-                const timeDifference = calculateTimeDifference(comingTime, leaveTime); // Функция для вычисления разницы фактического времени
-                if (!totalFactTimes[employee?.name]) {
-                    totalFactTimes[employee?.name] = timeDifference;
-                } else {
-                    totalFactTimes[employee?.name] += timeDifference;
+                const {employee, comingTime, leaveTime} = item;
+
+                if (!!comingTime && !!leaveTime) {
+                    const timeDifference = calculateTimeDifference(leaveTime, comingTime); // Функция для вычисления разницы фактического времени
+
+                    if (!totalFactTimes[employee?.name]) {
+                        totalFactTimes[employee?.name] = timeDifference;
+                    } else {
+                        totalFactTimes[employee?.name] += timeDifference;
+                    }
                 }
             });
 
@@ -283,7 +298,7 @@ const Table = () => {
 
             const totalPlanTime = totalPlanTimes[employeeName] || 0; // Получаем сумму планового времени для текущего сотрудника
             const totalFactTime = totalFactTimes[employeeName] || 0; // Получаем сумму фактического времени для текущего сотрудника
-            const totalPercentage = (totalFactTime / totalPlanTime).toFixed(2)
+            const totalPercentage = totalPlanTime !== 0 ? ((totalFactTime / totalPlanTime) * 100).toFixed(2) : 0;
 
             if (employeeData) {
                 tableRows.push(
@@ -299,16 +314,21 @@ const Table = () => {
 
                             return (
                                 <Fragment key={colIndex}>
-                                    <TimepickerTd employee={employee} userData={userData} workTime={workTime}
-                                                fetchIds={() => fetchIds()} />
+                                    <Timepicker employee={employee}
+                                                userData={userData}
+                                                workTime={workTime}
+                                                fetchIds={() => fetchIds()}
+                                    />
                                     <td colSpan={1}>
-                                    {employee &&
+                                        {employee &&
                                             <div className="head-tab-time">
-                                                {employee?.comingTime && <span className="time">{employee?.comingTime}</span>}
+                                                {employee?.comingTime &&
+                                                    <span className="time">{employee?.comingTime}</span>}
                                                 <div>-</div>
-                                                {employee?.leaveTime && <span className="time">{employee?.leaveTime}</span>}
+                                                {employee?.leaveTime &&
+                                                    <span className="time">{employee?.leaveTime}</span>}
                                             </div>
-                                    }
+                                        }
                                     </td>
                                 </Fragment>
                             );
@@ -328,58 +348,59 @@ const Table = () => {
         });
     });
 
-    if (isLoading) {
-        return <div className="loader-parent">
-            <div className="loader"></div>
-        </div>
-    }
+    // if (isLoading) {
+    //     return <div className="loader-parent">
+    //         <div className="loader"></div>
+    //     </div>
+    // }
 
-    return (
-        <table border={1} className="table">
-            <thead>
-            <tr>
-                <th></th>
-                {allUniqueDates.map((date, index) => (
-                        <th key={index} colSpan={2}>
-                            <div className="head-date">
-                                {date}
-                            </div>
-                        </th>
-                    )
-                )}
-                <th colSpan={3}>
-                    <div>
-                        Всего
-                    </div>
-                </th>
-            </tr>
-            <tr>
-                <th></th>
-                {allUniqueDates?.map((date) => (
-                    <Fragment key={date}>
-                        <th colSpan={1}>
-                            <div className="head-tab">план</div>
-                        </th>
-                        <th colSpan={1}>
-                            <div className="head-tab">факт</div>
-                        </th>
-                    </Fragment>
-                ))}
-                <th colSpan={1} width={150}>
-                    <div>план, час</div>
-                </th>
-                <th colSpan={1} width={150}>
-                    <div>факт, час</div>
-                </th>
-                <th colSpan={1} width={150}>
-                    <div>% выполнения</div>
-                </th>
-            </tr>
-            </thead>
-            <tbody>
-            {tableRows}
-            </tbody>
-        </table>
+    return (isLoading ? <div className="loader-parent">
+                <div className="loader"></div>
+            </div> : <table border={1} className="table">
+                <thead>
+                <tr>
+                    <th></th>
+                    {allUniqueDates.map((date, index) => (
+                            <th key={index} colSpan={2}>
+                                <div className="head-date">
+                                    {date}
+                                </div>
+                            </th>
+                        )
+                    )}
+                    <th colSpan={3}>
+                        <div>
+                            Всего
+                        </div>
+                    </th>
+                </tr>
+                <tr>
+                    <th></th>
+                    {allUniqueDates?.map((date) => (
+                        <Fragment key={date}>
+                            <th colSpan={1}>
+                                <div className="head-tab">план</div>
+                            </th>
+                            <th colSpan={1}>
+                                <div className="head-tab">факт</div>
+                            </th>
+                        </Fragment>
+                    ))}
+                    <th colSpan={1} width={150}>
+                        <div>план, час</div>
+                    </th>
+                    <th colSpan={1} width={150}>
+                        <div>факт, час</div>
+                    </th>
+                    <th colSpan={1} width={150}>
+                        <div>% выполнения</div>
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                {tableRows}
+                </tbody>
+            </table>
     );
 };
 
