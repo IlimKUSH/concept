@@ -88,10 +88,12 @@ const Timepicker = ({employee, workTime, userData, fetchIds}) => {
                         className="time pointer"
                         onChange={(time) => handleTimeChange(employee?.startTime, time, employee.id, employee.version)}
                     />}
-                    <select className="custom-input" value={selectedOption} onChange={handleChange}>
-                        {workTime?.data?.map((work) => (
-                            <option key={work.name} value={work.name}>{work.name}</option>))}
-                    </select>
+                    {userData?.editable &&
+                        <select className="custom-input" value={selectedOption} onChange={handleChange}>
+                            {workTime?.data?.map((work) => (
+                                <option key={work.name} value={work.name}>{work.name}</option>))}
+                        </select>
+                    }
                 </div>
             }
         </td>

@@ -72,7 +72,7 @@ const Table = () => {
                     })
                         .then((res) => res.json())
                         .then((jsonData) => {
-                            const editable = jsonData.data[0]?.roles?.some(role => role.name === 'Admin' || role.name === 'HR Manager')
+                            const editable = jsonData.data[0]?.roles?.some(role => role.name !== 'Admin' || role.name !== 'HR Manager')
                             setUserData({...jsonData.data[0], editable})
                         })
                 }
