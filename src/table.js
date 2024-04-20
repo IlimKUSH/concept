@@ -1,4 +1,4 @@
-import {Fragment, useCallback, useEffect, useState} from 'react';
+import {Fragment, useCallback, useEffect, useRef, useState} from 'react';
 import {differenceInHours, eachDayOfInterval, endOfMonth, format, startOfMonth} from 'date-fns';
 import 'react-datepicker/dist/react-datepicker.css';
 import Timepicker from "./components/timepicker";
@@ -22,6 +22,8 @@ const Table = () => {
     const [workTime, setWorkTime] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [theme, setTheme] = useState("dark");
+
+    const containerRef = useRef(null)
 
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
@@ -72,7 +74,7 @@ const Table = () => {
                     })
                         .then((res) => res.json())
                         .then((jsonData) => {
-                            const editable = jsonData.data[0]?.roles?.some(role => role.name !== 'Admin' || role.name !== 'HR Manager')
+                            const editable = jsonData.data[0]?.roles?.some(role => role.name === 'Admin' || role.name === 'HR Manager')
                             setUserData({...jsonData.data[0], editable})
                         })
                 }
@@ -105,6 +107,8 @@ const Table = () => {
                         },
                         credentials: "include",
                         body: JSON.stringify({
+                            // limit: limit,
+                            sortBy:["department"],
                             data: {
                                 criteria: [
                                     {
@@ -130,19 +134,27 @@ const Table = () => {
 
     // Функция для обновления позиции горизонтального скролла и сохранения ее в локальное хранилище
     const updateScrollPosition = () => {
-        const currentPosition = window.scrollX;
-        localStorage.setItem('horizontalScrollPosition', currentPosition.toString());
+        if (containerRef.current != null) {
+            const currentXPosition = containerRef.current.scrollLeft;
+            const currentYPosition = containerRef.current.scrollTop;
+            localStorage.setItem('horizontalScrollPosition', currentXPosition.toString());
+            localStorage.setItem('verticalScrollPosition', currentYPosition.toString());
+        }
     };
 
     // Обработчик события прокрутки, вызывающий функцию обновления позиции скролла
     useEffect(() => {
         if (!isLoading) {
-            const savedPosition = localStorage.getItem('horizontalScrollPosition');
-            window.scroll(parseInt(savedPosition), 0);
-            window.addEventListener('scroll', updateScrollPosition);
-            return () => {
-                window.removeEventListener('scroll', updateScrollPosition);
-            };
+            const container = containerRef.current;
+            if (container != null) {
+                const xPosition = localStorage.getItem('horizontalScrollPosition');
+                const yPosition = localStorage.getItem('verticalScrollPosition');
+                container.scroll(parseInt(xPosition), parseInt(yPosition));
+                container.addEventListener('scroll', updateScrollPosition);
+                return () => {
+                    container.removeEventListener('scroll', updateScrollPosition);
+                };
+            }
         }
     }, [isLoading]);
 
@@ -150,7 +162,7 @@ const Table = () => {
         fetchWorkTime();
         fetchUserData();
         fetchIds();
-    }, [fetchIds, fetchUserData, fetchWorkTime]);
+    }, []);
 
     useEffect(() => {
         if (theme === "dark") {
@@ -348,18 +360,18 @@ const Table = () => {
         });
     });
 
-    // if (isLoading) {
-    //     return <div className="loader-parent">
-    //         <div className="loader"></div>
-    //     </div>
-    // }
+    if (isLoading) {
+        return <div className="loader-parent">
+            <div className="loader"></div>
+        </div>
+    }
 
-    return (isLoading ? <div className="loader-parent">
-                <div className="loader"></div>
-            </div> : <table border={1} className="table">
+    return (
+        <div className="container" ref={containerRef}>
+            <table className="table">
                 <thead>
                 <tr>
-                    <th></th>
+                    <th className="sticky"></th>
                     {allUniqueDates.map((date, index) => (
                             <th key={index} colSpan={2}>
                                 <div className="head-date">
@@ -375,7 +387,7 @@ const Table = () => {
                     </th>
                 </tr>
                 <tr>
-                    <th></th>
+                    <th className="sticky"></th>
                     {allUniqueDates?.map((date) => (
                         <Fragment key={date}>
                             <th colSpan={1}>
@@ -401,6 +413,7 @@ const Table = () => {
                 {tableRows}
                 </tbody>
             </table>
+        </div>
     );
 };
 

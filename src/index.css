@@ -16,6 +16,12 @@
 
   --employee-bg-light: #FFF;
   --employee-bg-dark: #212235;
+
+  --scrollbar-bg-light: #f1f1f1;
+  --scrollbar-bg-dark: #1a1937;
+
+  --scrollbar-thumb-light: #c0bdbd;
+  --scrollbar-thumb-dark: #383597;
 }
 
 * {
@@ -58,11 +64,11 @@ body {
 }
 
 .weekend {
-  color: #3ECF8E;
+  color: #931525;
 }
 
 .dark-mode .weekend {
-  color: #72E128;
+  color: #fb6262;
 }
 
 .dark-mode select {
@@ -119,6 +125,11 @@ body {
   z-index: 1;
 }
 
+.container {
+  height: 653px;
+  overflow: scroll;
+}
+
 .head-tab {
   width: 130px;
 }
@@ -154,8 +165,6 @@ body {
 .table{
   border-collapse: collapse;
   border: 1px solid var(--border-light);
-  width: 100%;
-  margin-bottom: 20px;
 }
 
 .dark-mode .table{
@@ -217,6 +226,26 @@ body {
 
 .dark-mode .employee-bg {
   background: var(--employee-bg-dark);
+}
+
+.container::-webkit-scrollbar {
+  width: 10px;
+  background-color: var(--scrollbar-bg-light);
+}
+
+.container::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-light);
+  border-radius: 2px;
+}
+
+.dark-mode .container::-webkit-scrollbar {
+  width: 10px;
+  background-color: var(--scrollbar-bg-dark);
+}
+
+.dark-mode .container::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb-dark);
+  border-radius: 2px;
 }
 
 .react-datepicker-popper {

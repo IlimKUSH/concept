@@ -63,7 +63,7 @@ const Timepicker = ({employee, workTime, userData, fetchIds}) => {
                 <div className="head-tab-time">
                     <div hidden>{employee?.startTime?.slice(0, -3)}</div>
                     {startTime && <DatePicker
-                        disabled={isLoading || userData?.editable}
+                        disabled={isLoading || !userData?.editable}
                         selected={startTime}
                         showTimeSelect
                         showTimeSelectOnly
@@ -77,7 +77,7 @@ const Timepicker = ({employee, workTime, userData, fetchIds}) => {
                     {startTime && endTime ? <div>-</div> : <div className="weekend">Выходной</div>}
                     <div hidden>{employee?.endTime?.slice(0, -3)}</div>
                     {endTime && <DatePicker
-                        disabled={isLoading || userData?.editable}
+                        disabled={isLoading || !userData?.editable}
                         selected={endTime}
                         showTimeSelect
                         showTimeSelectOnly
