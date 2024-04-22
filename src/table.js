@@ -13,6 +13,10 @@ const calculateTimeDifference = (endTime, startTime) => {
         diff *= -1
     }
 
+    if (diff === 9) {
+        diff = 8;
+    }
+
     return diff
 }
 
