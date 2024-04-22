@@ -127,7 +127,7 @@ body {
 
 .container {
   height: 653px;
-  overflow: scroll;
+  overflow: auto;
 }
 
 .head-tab {
@@ -246,6 +246,69 @@ body {
 .dark-mode .container::-webkit-scrollbar-thumb {
   background-color: var(--scrollbar-thumb-dark);
   border-radius: 2px;
+}
+
+.arrow {
+  width: 15px;
+  height: 15px;
+  fill: var(--text-light);
+}
+
+.dark-mode .arrow {
+  width: 15px;
+  height: 15px;
+  fill: var(--text-dark);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  list-style: none;
+  margin-top: 20px;
+}
+
+.page-item {
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.page-link {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-light);
+  background-color: var(--employee-bg-light);
+  border: 1px solid #dee2e6;
+  transition: background-color 0.3s ease;
+}
+
+.dark-mode .page-link {
+  color: var(--text-dark);
+  background-color: var(--employee-bg-dark);
+  border: 1px solid #2f4357;
+}
+
+.page-link:hover {
+  color: #0056b3;
+  background-color: var(--row-hover-light);
+  border-color: #dee2e6;
+}
+
+.dark-mode .page-link:hover {
+  background-color: var(--row-hover-dark);
+  border-color: #2f4357;
+  color: var(--text-dark);
+}
+
+.active .page-link {
+  color: #fff;
+  background-color: var(--scrollbar-thumb-light);
+  border-color: #9ca9c0;
+}
+
+.dark-mode .active .page-link {
+  color: #fff;
+  background-color: var(--scrollbar-thumb-dark);
+  border-color: #817d7d;
 }
 
 .react-datepicker-popper {

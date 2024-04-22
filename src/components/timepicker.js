@@ -18,7 +18,7 @@ const Timepicker = ({employee, workTime, userData, fetchIds}) => {
         const end = typeof endTime === "string" ? new Date(`1970-01-01T${endTime}`) : endTime;
 
         // Проверка, является ли время начала поздним вечерним
-        const isLateEvening = isAfter(start, new Date(start.getFullYear(), start.getMonth(), start.getDate(), 18, 0, 0));
+        const isLateEvening = isAfter(start, new Date(start?.getFullYear(), start?.getMonth(), start?.getDate(), 18, 0, 0));
 
         // Вычисление разницы в часах
         const timeDifference = differenceInHours(start, end);

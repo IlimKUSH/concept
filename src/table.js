@@ -2,6 +2,7 @@ import {Fragment, useCallback, useEffect, useRef, useState} from 'react';
 import {differenceInHours, eachDayOfInterval, endOfMonth, format, startOfMonth} from 'date-fns';
 import 'react-datepicker/dist/react-datepicker.css';
 import Timepicker from "./components/timepicker";
+import ReactPaginate from "react-paginate";
 
 const calculateTimeDifference = (endTime, startTime) => {
     const start = new Date(`1970-01-01T${startTime}`);
@@ -12,12 +13,19 @@ const calculateTimeDifference = (endTime, startTime) => {
         diff *= -1
     }
 
+    if (diff === 9) {
+        diff = 8;
+    }
+
     return diff
 }
 
 const Table = () => {
     const [userData, setUserData] = useState(null);
     const [data, setData] = useState(null);
+    const [limit, setLimit] = useState(null);
+    const [itemOffset, setItemOffset] = useState(0);
+    const [pageCount, setPageCount] = useState(0);
     const [factTime, setFactTime] = useState(null);
     const [workTime, setWorkTime] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -97,6 +105,11 @@ const Table = () => {
             .then((res) => res.json())
             .then((jsonData) => {
                 const ids = jsonData.data[0]?.workScheduleLineList?.map(item => item.id);
+                const endDate = jsonData.data[0]?.endDate.split("-")[2]
+                const limit = endDate * 15
+
+                setLimit(limit)
+
                 if (ids?.length > 0) {
                     return fetch("/ws/rest/com.axelor.apps.mycrm.db.WorkScheduleLine/search", {
                         method: 'POST',
@@ -107,7 +120,8 @@ const Table = () => {
                         },
                         credentials: "include",
                         body: JSON.stringify({
-                            // limit: limit,
+                            limit,
+                            offset: itemOffset,
                             sortBy:["department"],
                             data: {
                                 criteria: [
@@ -130,7 +144,13 @@ const Table = () => {
                 setIsLoading(false)
             })
             .catch((error) => console.error(error))
-    }, [id]);
+    }, [id, itemOffset]);
+
+    const handlePageClick = ({selected}) => {
+        const newOffset = selected * limit;
+        setPageCount(selected)
+        setItemOffset(newOffset);
+    };
 
     // Функция для обновления позиции горизонтального скролла и сохранения ее в локальное хранилище
     const updateScrollPosition = () => {
@@ -161,8 +181,11 @@ const Table = () => {
     useEffect(() => {
         fetchWorkTime();
         fetchUserData();
-        fetchIds();
     }, []);
+
+    useEffect(() => {
+        fetchIds();
+    }, [itemOffset]);
 
     useEffect(() => {
         if (theme === "dark") {
@@ -367,52 +390,83 @@ const Table = () => {
     }
 
     return (
-        <div className="container" ref={containerRef}>
-            <table className="table">
-                <thead>
-                <tr>
-                    <th className="sticky"></th>
-                    {allUniqueDates.map((date, index) => (
-                            <th key={index} colSpan={2}>
-                                <div className="head-date">
-                                    {date}
-                                </div>
-                            </th>
-                        )
-                    )}
-                    <th colSpan={3}>
-                        <div>
-                            Всего
-                        </div>
-                    </th>
-                </tr>
-                <tr>
-                    <th className="sticky"></th>
-                    {allUniqueDates?.map((date) => (
-                        <Fragment key={date}>
-                            <th colSpan={1}>
-                                <div className="head-tab">план</div>
-                            </th>
-                            <th colSpan={1}>
-                                <div className="head-tab">факт</div>
-                            </th>
-                        </Fragment>
-                    ))}
-                    <th colSpan={1} width={150}>
-                        <div>план, час</div>
-                    </th>
-                    <th colSpan={1} width={150}>
-                        <div>факт, час</div>
-                    </th>
-                    <th colSpan={1} width={150}>
-                        <div>% выполнения</div>
-                    </th>
-                </tr>
-                </thead>
-                <tbody>
-                {tableRows}
-                </tbody>
-            </table>
+        <div>
+            <div className="container" ref={containerRef}>
+                <table className="table">
+                    <thead>
+                    <tr>
+                        <th className="sticky"></th>
+                        {allUniqueDates.map((date, index) => (
+                                <th key={index} colSpan={2}>
+                                    <div className="head-date">
+                                        {date}
+                                    </div>
+                                </th>
+                            )
+                        )}
+                        <th colSpan={3}>
+                            <div>
+                                Всего
+                            </div>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th className="sticky"></th>
+                        {allUniqueDates?.map((date) => (
+                            <Fragment key={date}>
+                                <th colSpan={1}>
+                                    <div className="head-tab">план</div>
+                                </th>
+                                <th colSpan={1}>
+                                    <div className="head-tab">факт</div>
+                                </th>
+                            </Fragment>
+                        ))}
+                        <th colSpan={1} width={150}>
+                            <div>план, час</div>
+                        </th>
+                        <th colSpan={1} width={150}>
+                            <div>факт, час</div>
+                        </th>
+                        <th colSpan={1} width={150}>
+                            <div>% выполнения</div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {tableRows}
+                    </tbody>
+                </table>
+            </div>
+            <ReactPaginate
+                nextLabel={<svg xmlns="http://www.w3.org/2000/svg" className="arrow" viewBox="0 0 24 24">
+                    <path
+                        d="m18.707 12.707-3 3a1 1 0 0 1-1.414-1.414L15.586 13H6a1 1 0 0 1 0-2h9.586l-1.293-1.293a1 1 0 0 1 1.414-1.414l3 3a1 1 0 0 1 0 1.414z"
+                        data-name="Right"/>
+                </svg>}
+                onPageChange={handlePageClick}
+                pageRangeDisplayed={3}
+                marginPagesDisplayed={2}
+                previousLabel={<svg xmlns="http://www.w3.org/2000/svg" className="arrow" viewBox="0 0 24 24">
+                    <path
+                        d="M19 12a1 1 0 0 1-1 1H8.414l1.293 1.293a1 1 0 1 1-1.414 1.414l-3-3a1 1 0 0 1 0-1.414l3-3a1 1 0 0 1 1.414 1.414L8.414 11H18a1 1 0 0 1 1 1z"
+                        data-name="Left"/>
+                </svg>}
+                breakLabel="..."
+                forcePage={pageCount}
+                renderOnZeroPageCount={null}
+                pageCount={Math.ceil(data?.total / limit)}
+                pageClassName="page-item"
+                pageLinkClassName="page-link"
+                previousClassName="page-item"
+                previousLinkClassName="page-link"
+                nextClassName="page-item"
+                nextLinkClassName="page-link"
+                breakClassName="page-item"
+                breakLinkClassName="page-link"
+                containerClassName="pagination"
+                activeClassName="active"
+            />
         </div>
     );
 };
