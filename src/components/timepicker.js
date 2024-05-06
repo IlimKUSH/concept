@@ -4,9 +4,11 @@ import {debounce} from "../hooks/useDebounce";
 import {differenceInHours, isAfter} from "date-fns";
 
 
-const Timepicker = ({employee, workTime, userData, fetchIds}) => {
+const Timepicker = ({disabled, employee, workTime, userData, fetchIds}) => {
     const [selectedOption, setSelectedOption] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+
+    console.log(disabled)
 
     const startTime = employee?.startTime ? new Date(`1970-01-01T${employee?.startTime}`) : null
     const endTime = employee?.endTime ? new Date(`1970-01-01T${employee?.endTime}`) : null
@@ -63,7 +65,7 @@ const Timepicker = ({employee, workTime, userData, fetchIds}) => {
                 <div className="head-tab-time">
                     <div hidden>{employee?.startTime?.slice(0, -3)}</div>
                     {startTime && <DatePicker
-                        disabled={isLoading || !userData?.editable}
+                        disabled={disabled || isLoading || !userData?.editable}
                         selected={startTime}
                         showTimeSelect
                         showTimeSelectOnly
@@ -77,7 +79,7 @@ const Timepicker = ({employee, workTime, userData, fetchIds}) => {
                     {startTime && endTime ? <div>-</div> : <div className="weekend">Выходной</div>}
                     <div hidden>{employee?.endTime?.slice(0, -3)}</div>
                     {endTime && <DatePicker
-                        disabled={isLoading || !userData?.editable}
+                        disabled={disabled || isLoading || !userData?.editable}
                         selected={endTime}
                         showTimeSelect
                         showTimeSelectOnly
@@ -88,7 +90,7 @@ const Timepicker = ({employee, workTime, userData, fetchIds}) => {
                         className="time pointer"
                         onChange={(time) => handleTimeChange(employee?.startTime, time, employee.id, employee.version)}
                     />}
-                    {userData?.editable &&
+                    {(!disabled || userData?.editable) &&
                         <select className="custom-input" value={selectedOption} onChange={handleChange}>
                             {workTime?.data?.map((work) => (
                                 <option key={work.name} value={work.name}>{work.name}</option>))}

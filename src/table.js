@@ -29,6 +29,7 @@ const Table = () => {
     const [factTime, setFactTime] = useState(null);
     const [workTime, setWorkTime] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [disabled, setDisabled] = useState(false);
     const [theme, setTheme] = useState("dark");
 
     const containerRef = useRef(null)
@@ -108,6 +109,7 @@ const Table = () => {
                 const endDate = jsonData.data[0]?.endDate.split("-")[2]
                 const limit = endDate * 15
 
+                setDisabled(jsonData.data[0]?.isConfirmed)
                 setLimit(limit)
 
                 if (ids?.length > 0) {
@@ -283,8 +285,8 @@ const Table = () => {
         };
     });
 
-    const uniqueEmployeeNames = new Set(data?.data?.map(employeeData => employeeData.employee.name)); // Получаем уникальные имена сотрудников
-    const uniqueDepartments = [...new Set(data?.data?.map(employeeData => employeeData.department.name))]
+    const uniqueEmployeeNames = new Set(data?.data?.map(employeeData => employeeData?.employee?.name)); // Получаем уникальные имена сотрудников
+    const uniqueDepartments = [...new Set(data?.data?.map(employeeData => employeeData?.department?.name))]
 
     const tableRows = [];
 
@@ -349,10 +351,12 @@ const Table = () => {
 
                             return (
                                 <Fragment key={colIndex}>
-                                    <Timepicker employee={employee}
-                                                userData={userData}
-                                                workTime={workTime}
-                                                fetchIds={() => fetchIds()}
+                                    <Timepicker
+                                        disabled={disabled}
+                                        employee={employee}
+                                        userData={userData}
+                                        workTime={workTime}
+                                        fetchIds={() => fetchIds()}
                                     />
                                     <td colSpan={1}>
                                         {employee &&
