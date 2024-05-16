@@ -47,7 +47,7 @@ const Table = () => {
             },
             credentials: "include",
             body: JSON.stringify({
-                sortBy: ["startTime"]
+                sortBy: ["name"]
             })
         })
             .then((res) => res.json())
