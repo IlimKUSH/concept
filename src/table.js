@@ -22,6 +22,7 @@ const calculateTimeDifference = (endTime, startTime) => {
 
 const Table = () => {
     const [userData, setUserData] = useState(null);
+    const [role, setRole] = useState(null);
     const [data, setData] = useState(null);
     const [limit, setLimit] = useState(null);
     const [itemOffset, setItemOffset] = useState(0);
@@ -83,12 +84,16 @@ const Table = () => {
                     })
                         .then((res) => res.json())
                         .then((jsonData) => {
-                            const editable = jsonData.data[0]?.roles?.some(role => role.name === 'Admin' || role.name === 'HR Manager')
+                            const canEdit = jsonData.data[0]?.roles?.some(role => role.name === 'Admin' || role.name === 'HR Manager')
+                            const editable = jsonData.data[0]?.roles?.some(role => role.name === 'Admin' || role.name === 'HR Manager' || role.name.includes("Manager"))
+                            setRole(canEdit)
                             setUserData({...jsonData.data[0], editable})
                         })
                 }
             })
     }, [])
+
+    console.log(role)
 
     const fetchIds = useCallback(() => {
         setIsLoading(true)
@@ -101,42 +106,49 @@ const Table = () => {
                 "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
             },
             credentials: "include",
-            body: JSON.stringify({})
+            body: JSON.stringify({
+                fields: ["startDate","endDate","isConfirmed"]
+            })
         })
             .then((res) => res.json())
             .then((jsonData) => {
-                const ids = jsonData.data[0]?.workScheduleLineList?.map(item => item.id);
                 const endDate = jsonData.data[0]?.endDate.split("-")[2]
                 const limit = endDate * 15
 
                 setDisabled(jsonData.data[0]?.isConfirmed)
                 setLimit(limit)
 
-                if (ids?.length > 0) {
-                    return fetch("/ws/rest/com.axelor.apps.mycrm.db.WorkScheduleLine/search", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
-                            "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
-                        },
-                        credentials: "include",
-                        body: JSON.stringify({
-                            limit,
-                            offset: itemOffset,
-                            sortBy:["department"],
-                            data: {
+                return fetch("/ws/rest/com.axelor.apps.mycrm.db.WorkScheduleLine/search", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
+                        "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        limit,
+                        offset: itemOffset,
+                        sortBy:["department"],
+                        data: {
+                            criteria: [{
+                                operator: 'and',
                                 criteria: [
                                     {
-                                        fieldName: "id",
-                                        operator: "in",
-                                        value: ids
+                                        fieldName: "workSchedule.id",
+                                        operator: "=",
+                                        value: id  //id WorkSchedule
+                                    },
+                                    !role && {
+                                        fieldName: "department.name",   //если админ и hr то этот филтр не ставится
+                                        operator: "=",
+                                        value: "ACA"
                                     }
                                 ]
-                            }
-                        })
-                    });
-                }
+                            }]
+                        }
+                    })
+                });
             })
             .then((res) => res.json())
             .then((jsonData) => {
