@@ -22,7 +22,7 @@ const calculateTimeDifference = (endTime, startTime) => {
 
 const Table = () => {
     const [userData, setUserData] = useState(null);
-    const [role, setRole] = useState(null);
+    const [edit, setEdit] = useState(null);
     const [data, setData] = useState(null);
     const [limit, setLimit] = useState(null);
     const [itemOffset, setItemOffset] = useState(0);
@@ -73,29 +73,35 @@ const Table = () => {
                 const theme = jsonData?.["application.theme"]
                 setTheme(theme)
                 if (id) {
-                    fetch(`https://concept.sanarip.org/concept/ws/rest/com.axelor.auth.db.User/${id}`, {
-                        method: 'GET',
+                    fetch(`/ws/rest/com.axelor.auth.db.User/${id}/fetch`, {
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             "X-Csrf-Token": "34c22bd64edf4fe8a5491eca7e9a01b4",
                             "Authorization": "Basic Y29uY2VwdDpjb25jZXB0MTIz"
                         },
+                        body: JSON.stringify({
+                            fields: ["code","roles","fullName"],
+                            related: {
+                                partner: ["companyDepartment"]
+                            }
+                        }),
                         credentials: "include",
                     })
                         .then((res) => res.json())
                         .then((jsonData) => {
                             const canEdit = jsonData.data[0]?.roles?.some(role => role.name === 'Admin' || role.name === 'HR Manager')
                             const editable = jsonData.data[0]?.roles?.some(role => role.name === 'Admin' || role.name === 'HR Manager' || role.name.includes("Manager"))
-                            setRole(canEdit)
+                            setEdit(canEdit);
                             setUserData({...jsonData.data[0], editable})
                         })
                 }
             })
     }, [])
 
-    console.log(role)
-
     const fetchIds = useCallback(() => {
+        if (!userData) return;
+
         setIsLoading(true)
         fetch(`/ws/rest/com.axelor.apps.mycrm.db.WorkSchedule/${id}/fetch`, {
             method: 'POST',
@@ -139,12 +145,12 @@ const Table = () => {
                                         operator: "=",
                                         value: id  //id WorkSchedule
                                     },
-                                    !role && {
-                                        fieldName: "department.name",   //если админ и hr то этот филтр не ставится
+                                    !edit && {
+                                        fieldName: "department.name",   //если админ и hr то этот фильтр не ставится
                                         operator: "=",
-                                        value: "ACA"
+                                        value: userData?.partner?.companyDepartment.name
                                     }
-                                ]
+                                ].filter(Boolean)
                             }]
                         }
                     })
@@ -158,7 +164,18 @@ const Table = () => {
                 setIsLoading(false)
             })
             .catch((error) => console.error(error))
-    }, [id, itemOffset]);
+    }, [id, itemOffset, userData, edit]);
+
+    useEffect(() => {
+        fetchWorkTime();
+        fetchUserData();
+    }, []);
+
+    useEffect(() => {
+        if (userData) {
+            fetchIds()
+        }
+    }, [userData,fetchIds])
 
     const handlePageClick = ({selected}) => {
         const newOffset = selected * limit;
@@ -191,11 +208,6 @@ const Table = () => {
             }
         }
     }, [isLoading]);
-
-    useEffect(() => {
-        fetchWorkTime();
-        fetchUserData();
-    }, []);
 
     useEffect(() => {
         fetchIds();
